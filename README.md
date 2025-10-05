@@ -19,17 +19,3 @@ La plataforma opera bajo un modelo de acceso diferenciado, asegurando la sosteni
 * **Organización:** Navegación estructurada por categorías de equipos (Indicadores, Celdas de Carga, Módulos).
 * **Exclusivas Premium:** Guardar en Favoritos, Historial de Vistas y Notificaciones de Actualización.
 
-## Estado Actual
-
-El proyecto se encuentra en la **Fase de Diseño y Conceptualización**.
-
-### Próximos Hitos
-
-1.  Desarrollo y presentación de **MOCKUPs** de la interfaz de usuario.
-2.  Definición y presentación de la **Base de Datos Relacional** del sistema de manuales.
-
----
-
-## Tecnologías (Pendiente de Definición)
-
-* *\[Aquí se listarán los frameworks y lenguajes de programación una vez se decidan.\]*
