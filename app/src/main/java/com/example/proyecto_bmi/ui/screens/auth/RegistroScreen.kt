@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -29,6 +30,13 @@ fun RegistroScreen(
     viewModel: UsuarioViewModel
 ) {
     val estado by viewModel.estado.collectAsState()
+    val registroExitoso by viewModel.registroExitoso.collectAsState()
+
+    LaunchedEffect(registroExitoso) {
+        if (registroExitoso) {
+            navController.navigate(route = "resumen")
+        }
+    }
 
     Column(
         Modifier
@@ -103,9 +111,8 @@ fun RegistroScreen(
 
         Button(
             onClick = {
-                if (viewModel.validarFormulario()) {
-                    navController.navigate(route = "resumen")
-                }
+                // Llama a la función que valida y registra en la BD
+                viewModel.intentarRegistro()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
