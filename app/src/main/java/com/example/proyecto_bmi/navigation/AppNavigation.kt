@@ -8,8 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.proyecto_bmi.data.local.AppDatabase
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
+import com.example.proyecto_bmi.ui.screens.auth.LoginScreen
 import com.example.proyecto_bmi.ui.screens.auth.RegistroScreen
 import com.example.proyecto_bmi.ui.screens.auth.ResumenScreen
+import com.example.proyecto_bmi.ui.screens.misc.CatalogoScreen
 import com.example.proyecto_bmi.ui.screens.misc.ContactScreen
 import com.example.proyecto_bmi.ui.screens.misc.HomeScreen
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
@@ -32,6 +34,9 @@ fun AppNavigation() {
         composable(route = "home") {
             HomeScreen(navController = navController)
         }
+        composable(route = "login") {
+            LoginScreen(navController, usuarioViewModel)
+        }
         composable(route = "registro") {
             RegistroScreen(navController, usuarioViewModel)
         }
@@ -40,6 +45,9 @@ fun AppNavigation() {
         }
         composable(route = "contact") {
             ContactScreen(navController = navController)
+        }
+        composable(route = "catalogo") {
+            CatalogoScreen(navController, usuarioViewModel)
         }
     }
 }

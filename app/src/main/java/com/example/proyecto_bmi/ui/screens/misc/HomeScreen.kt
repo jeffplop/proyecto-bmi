@@ -26,6 +26,10 @@ fun HomeScreen(navController: NavController) {
     ) {
         Text("B.M.I. Catálogo Principal", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(32.dp))
+        Button(onClick = { navController.navigate("login") }) {
+            Text("Iniciar Sesión")
+        }
+        Spacer(Modifier.height(16.dp))
         Button(onClick = { navController.navigate("registro") }) {
             Text("Registrarse")
         }

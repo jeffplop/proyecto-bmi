@@ -11,6 +11,11 @@ data class UsuarioEntity(
     val email: String,
     val clave: String,
     val direccion: String,
-    val tipoUsuario: String = "Estandar",
+    val tipoUsuario: String = TIPO_ESTANDAR,
     val fechaIngreso: Long = System.currentTimeMillis()
-)
+) {
+    companion object {
+        const val TIPO_ESTANDAR = "Estandar"
+        const val TIPO_PREMIUM = "Premium"
+    }
+}

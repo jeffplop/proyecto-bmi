@@ -1,14 +1,21 @@
 package com.example.proyecto_bmi.ui.screens.auth
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,50 +34,67 @@ import com.example.proyecto_bmi.domain.model.UsuarioUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
     val estado by viewModel.estado.collectAsState()
 
-    Column(
-        Modifier
-            .padding(all = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "¡Registro Exitoso!", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
-        Text(text = "Resumen del Registro", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(16.dp))
-        Text(text = "Nombre: ${estado.nombre}")
-        Text(text = "Correo: ${estado.correo}")
-        Text(text = "Dirección: ${estado.direccion}")
-        Text(text = "Contraseña: ${"*".repeat(n = estado.clave.length)}")
-        Text(text = "Términos: ${if (estado.aceptaTerminos) "Aceptados" else "No aceptados"}")
-
-        Spacer(Modifier.height(32.dp))
-
-        Button(onClick = { navController.navigate("home") }) {
-            Text("Ir a Inicio")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Resumen de Registro") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver a la pestaña anterior",
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+            )
         }
-        Spacer(Modifier.height(16.dp))
-        OutlinedButton(onClick = { navController.navigate("contact") }) {
-            Text("Contactar")
+    ) { paddingValues ->
+        Column(
+            Modifier
+                .padding(paddingValues)
+                .padding(all = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = "¡Registro Exitoso!", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(16.dp))
+            Text(text = "Resumen del Registro", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(16.dp))
+            Text(text = "Nombre: ${estado.nombre}")
+            Text(text = "Correo: ${estado.correo}")
+            Text(text = "Dirección: ${estado.direccion}")
+            // Mostramos la clave con estrellas por seguridad/estética
+            Text(text = "Contraseña: ${"*".repeat(n = estado.clave.length)}")
+            Text(text = "Términos: ${if (estado.aceptaTerminos) "Aceptados" else "No aceptados"}")
+
+            Spacer(Modifier.height(32.dp))
+
+            Button(onClick = { navController.navigate("catalogo") }) {
+                Text("Ir a Catálogo")
+            }
+            Spacer(Modifier.height(16.dp))
+            OutlinedButton(onClick = { navController.navigate("contact") }) {
+                Text("Contactar")
+            }
         }
     }
 }
 
-private class MockUsuarioDao : UsuarioDao {
+class MockUsuarioDao : UsuarioDao {
     override suspend fun insertUser(user: UsuarioEntity): Long = 1L
-
     override suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity? = null
-
     override suspend fun getUserById(userId: Int): UsuarioEntity? = null
     override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
 }
 
-private class MockUsuarioRepository(usuarioDao: UsuarioDao) : UsuarioRepository(usuarioDao)
+class MockUsuarioRepository(usuarioDao: UsuarioDao) : UsuarioRepository(usuarioDao)
 
-private class PreviewUsuarioViewModel(repository: UsuarioRepository) : UsuarioViewModel(repository) {
-
+class PreviewResumenViewModel(repository: UsuarioRepository) : UsuarioViewModel(repository) {
     override val estado: StateFlow<UsuarioUiState> = MutableStateFlow(
         UsuarioUiState(
             nombre = "Test Preview",
@@ -82,16 +106,16 @@ private class PreviewUsuarioViewModel(repository: UsuarioRepository) : UsuarioVi
     )
 }
 
-@SuppressLint("ViewModelConstructorInComposable")
+private val resumenScreenPreviewViewModel: PreviewResumenViewModel by lazy {
+    val mockDao = MockUsuarioDao()
+    val mockRepository = MockUsuarioRepository(mockDao)
+    PreviewResumenViewModel(mockRepository)
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ResumenScreenPreview() {
-    val mockDao = MockUsuarioDao()
-    val mockRepository = MockUsuarioRepository(mockDao)
-
-    val previewViewModel = PreviewUsuarioViewModel(mockRepository)
-
     Proyecto_bmiTheme {
-        ResumenScreen(navController = rememberNavController(), viewModel = previewViewModel)
+        ResumenScreen(navController = rememberNavController(), viewModel = resumenScreenPreviewViewModel)
     }
 }

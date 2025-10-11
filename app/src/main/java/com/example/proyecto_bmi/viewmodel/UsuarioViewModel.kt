@@ -31,7 +31,13 @@ open class UsuarioViewModel(
     }
 
     fun onClaveChange(valor: String) {
-        _estado.update { it.copy(clave = valor, errores = it.errores.copy(clave = null)) }
+        // Al cambiar clave, limpiamos el error de confirmación para forzar re-validación
+        _estado.update { it.copy(clave = valor, errores = it.errores.copy(clave = null, confirmClave = null)) }
+    }
+
+    fun onConfirmClaveChange(valor: String) {
+        // Mantenemos el campo de clave intacto y actualizamos el campo de confirmación
+        _estado.update { it.copy(confirmClave = valor, errores = it.errores.copy(confirmClave = null)) }
     }
 
     fun onDireccionChange(valor: String) {
@@ -40,6 +46,11 @@ open class UsuarioViewModel(
 
     fun onAceptarTerminosChange(valor: Boolean) {
         _estado.update { it.copy(aceptaTerminos = valor) }
+    }
+
+    fun resetAuthStatus() {
+        _registroExitoso.value = false
+        _estado.value = UsuarioUiState()
     }
 
     fun intentarRegistro(): Boolean {
@@ -65,21 +76,24 @@ open class UsuarioViewModel(
 
     private fun validarFormulario(): Boolean {
         val estadoActual = _estado.value
-        val errores = UsuarioErrores(
-            nombre = if (estadoActual.nombre.isBlank()) "Campo obligatorio" else null,
-            correo = if (!estadoActual.correo.contains("@")) "Correo inválido" else null,
-            clave = if (estadoActual.clave.length < 6) "Debe tener al menos 6 caracteres" else null,
-            direccion = if (estadoActual.direccion.isBlank()) "Campo obligatorio" else null
-        )
+
+        var erroresEncontrados = UsuarioErrores()
+
+        if (estadoActual.nombre.isBlank()) erroresEncontrados = erroresEncontrados.copy(nombre = "Campo obligatorio")
+        if (!estadoActual.correo.contains("@")) erroresEncontrados = erroresEncontrados.copy(correo = "Correo inválido")
+        if (estadoActual.clave.length < 6) erroresEncontrados = erroresEncontrados.copy(clave = "Debe tener al menos 6 caracteres")
+        if (estadoActual.direccion.isBlank()) erroresEncontrados = erroresEncontrados.copy(direccion = "Campo obligatorio")
+        if (estadoActual.clave != estadoActual.confirmClave) erroresEncontrados = erroresEncontrados.copy(confirmClave = "Las contraseñas no coinciden")
 
         val hayErrores = listOfNotNull(
-            errores.nombre,
-            errores.correo,
-            errores.clave,
-            errores.direccion
+            erroresEncontrados.nombre,
+            erroresEncontrados.correo,
+            erroresEncontrados.clave,
+            erroresEncontrados.confirmClave,
+            erroresEncontrados.direccion
         ).isNotEmpty()
 
-        _estado.update { it.copy(errores = errores) }
+        _estado.update { it.copy(errores = erroresEncontrados) }
         return !hayErrores
     }
 
