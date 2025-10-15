@@ -17,7 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ManageSearch
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,7 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +47,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,14 +56,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.proyecto_bmi.ui.theme.Proyecto_bmiTheme
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
-import com.example.proyecto_bmi.data.local.dao.UsuarioDao
-import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
-import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.TextStyle
-import com.example.proyecto_bmi.domain.model.UsuarioUiState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +64,8 @@ import kotlinx.coroutines.flow.StateFlow
 fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
     val estado by viewModel.estado.collectAsState()
     val loginExitoso by viewModel.loginExitoso.collectAsState()
+
+    var passwordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(loginExitoso) {
         if (loginExitoso) {
@@ -115,7 +115,7 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
             ) {
 
                 Icon(
-                    Icons.Filled.ManageSearch,
+                    Icons.AutoMirrored.Filled.ManageSearch,
                     contentDescription = "Buscador de Manuales",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(80.dp)
@@ -132,7 +132,7 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "Eroniotíadolos de Pesaje",
+                    "La biblioteca técnica de la industria.",
                     style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -157,14 +157,21 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     value = estado.clave,
                     onValueChange = viewModel::onClaveChange,
                     label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     isError = estado.errores.clave != null,
                     supportingText = {
                         estado.errores.clave?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                        val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(imageVector = image, description)
+                        }
+                    }
                 )
                 Spacer(Modifier.height(32.dp))
 

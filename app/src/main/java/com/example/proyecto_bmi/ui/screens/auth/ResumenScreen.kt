@@ -1,26 +1,27 @@
 package com.example.proyecto_bmi.ui.screens.auth
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -44,10 +45,10 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
             TopAppBar(
                 title = { Text("Resumen de Registro") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.navigate("home") }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar a la pantalla anterior",
+                            contentDescription = "Volver al inicio",
                         )
                     }
                 },
@@ -55,31 +56,104 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
             )
         }
     ) { paddingValues ->
-        Column(
-            Modifier
-                .padding(paddingValues)
-                .padding(all = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            Color(0xFF0D47A1)
+                        )
+                    )
+                )
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            Text(text = "¡Registro Exitoso!", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(16.dp))
-            Text(text = "Resumen del Registro", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(16.dp))
-            Text(text = "Nombre: ${estado.nombre}")
-            Text(text = "Correo: ${estado.correo}")
-            Text(text = "Dirección: ${estado.direccion}")
-            Text(text = "Contraseña: ${"*".repeat(n = estado.clave.length)}")
-            Text(text = "Términos: ${if (estado.aceptaTerminos) "Aceptados" else "No aceptados"}")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(all = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Éxito",
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier.size(80.dp)
+                )
 
-            Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
 
-            Button(onClick = { navController.navigate("catalogo") }) {
-                Text("Ir a Catálogo")
+                Text(
+                    text = "¡Registro Exitoso!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = "Tu cuenta ha sido creada.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Divider(modifier = Modifier.padding(vertical = 24.dp))
+
+                InfoRow(icon = Icons.Filled.Person, label = "Nombre", value = estado.nombre)
+                InfoRow(icon = Icons.Filled.Email, label = "Correo", value = estado.correo)
+                InfoRow(icon = Icons.Filled.Home, label = "Dirección", value = estado.direccion)
+                InfoRow(icon = Icons.Filled.Lock, label = "Contraseña", value = "∗".repeat(n = estado.clave.length))
+
+                Spacer(Modifier.height(32.dp))
+
+                Button(
+                    onClick = { navController.navigate("catalogo") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir al Catálogo")
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { navController.navigate("contact") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Contactar a Soporte")
+                }
             }
-            Spacer(Modifier.height(16.dp))
-            OutlinedButton(onClick = { navController.navigate("contact") }) {
-                Text("Contactar")
-            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

@@ -13,6 +13,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AppRegistration
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +28,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -41,6 +45,8 @@ import com.example.proyecto_bmi.ui.theme.Proyecto_bmiTheme
 fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
     val estado by viewModel.estado.collectAsState()
     val registroExitoso by viewModel.registroExitoso.collectAsState()
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     val isFormValid = estado.errores.nombre == null && estado.errores.correo == null
             && estado.errores.clave == null && estado.errores.confirmClave == null
             && estado.errores.direccion == null && estado.aceptaTerminos
@@ -61,16 +67,14 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     }
                 },
                 actions = {
-                    val buttonColor = if (isFormValid) Color(0xFF4CAF50) else Color.Gray
-
-                    TextButton(
+                    IconButton(
                         onClick = { if (isFormValid) viewModel.intentarRegistro() },
                         enabled = isFormValid
                     ) {
-                        Text(
-                            text = "Listo",
-                            color = buttonColor,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "Confirmar Registro",
+                            tint = if (isFormValid) Color(0xFF4CAF50) else Color.Gray
                         )
                     }
                 },
@@ -135,21 +139,38 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 )
 
                 OutlinedTextField(
-                    value = estado.clave, onValueChange = viewModel::onClaveChange, label = { Text("Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    value = estado.clave,
+                    onValueChange = viewModel::onClaveChange,
+                    label = { Text("Contraseña") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     isError = estado.errores.clave != null,
                     supportingText = { estado.errores.clave?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                        val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(imageVector = image, description)
+                        }
+                    }
                 )
 
                 OutlinedTextField(
-                    value = estado.confirmClave, onValueChange = viewModel::onConfirmClaveChange, label = { Text("Confirmar Contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    value = estado.confirmClave,
+                    onValueChange = viewModel::onConfirmClaveChange,
+                    label = { Text("Confirmar Contraseña") },
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     isError = estado.errores.confirmClave != null,
                     supportingText = { estado.errores.confirmClave?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        val image = if (confirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                        val description = if (confirmPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(imageVector = image, description)
+                        }
+                    }
                 )
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = estado.aceptaTerminos, onCheckedChange = viewModel::onAceptarTerminosChange)
                     Spacer(Modifier.width(8.dp))
