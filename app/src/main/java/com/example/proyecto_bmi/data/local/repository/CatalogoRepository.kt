@@ -31,7 +31,6 @@ class CatalogoRepository(private val catalogoDao: CatalogoDao) {
         return catalogoDao.getUserFavorites(userId)
     }
 
-    // Función para precargar datos iniciales
     suspend fun precargarDatos(manuales: List<ManualEntity>, fabricantes: List<FabricanteEntity>, categorias: List<CategoriaEntity>) {
         catalogoDao.insertFabricantes(fabricantes)
         catalogoDao.insertCategorias(categorias)

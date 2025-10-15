@@ -1,16 +1,25 @@
 package com.example.proyecto_bmi.ui.screens.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ManageSearch
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,15 +30,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,13 +54,25 @@ import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
 import com.example.proyecto_bmi.data.local.dao.UsuarioDao
 import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.TextStyle
+import com.example.proyecto_bmi.domain.model.UsuarioUiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val isLoginEnabled = email.isNotBlank() && password.length >= 6
+    val estado by viewModel.estado.collectAsState()
+    val loginExitoso by viewModel.loginExitoso.collectAsState()
+
+    LaunchedEffect(loginExitoso) {
+        if (loginExitoso) {
+            navController.navigate("catalogo")
+            viewModel.resetLoginStatus()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -56,7 +82,7 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver a la pestaña anterior",
+                            contentDescription = "Regresar a la pantalla anterior",
                         )
                     }
                 },
@@ -64,61 +90,142 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(all = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            Color(0xFF0D47A1)
+                        )
+                    )
+                )
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Buscador de Manuales de Pesaje", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Correo Electrónico") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    navController.navigate("catalogo")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isLoginEnabled
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(vertical = 32.dp, horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text("Iniciar Sesión")
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Icon(
+                    Icons.Filled.ManageSearch,
+                    contentDescription = "Buscador de Manuales",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(80.dp)
+                )
 
-            // Texto modificado según solicitud
-            Text(
-                text = buildAnnotatedString {
-                    append("¿No tienes una cuenta? ")
-                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("Registrate")
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "Buscador de Manuales de Pesaje",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Eroniotíadolos de Pesaje",
+                    style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = estado.correo,
+                    onValueChange = viewModel::onCorreoChange,
+                    label = { Text("Correo Electrónico") },
+                    isError = estado.errores.correo != null,
+                    supportingText = {
+                        estado.errores.correo?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = estado.clave,
+                    onValueChange = viewModel::onClaveChange,
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    isError = estado.errores.clave != null,
+                    supportingText = {
+                        estado.errores.clave?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(32.dp))
+
+                Button(
+                    onClick = viewModel::intentarLogin,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = estado.loginEnabled
+                ) {
+                    if (estado.loginLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("Iniciar Sesión", style = MaterialTheme.typography.bodyLarge)
                     }
-                },
-                modifier = Modifier.clickable { navController.navigate("registro") }
-            )
+                }
+
+                if (estado.loginError != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(estado.loginError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                val pressedColor = if (isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent
+
+                val annotatedText = buildAnnotatedString {
+                    append("¿Aún no posee una cuenta? ")
+                    pushStringAnnotation(tag = "REGISTER", annotation = "registro")
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) {
+                        append("Registrarse")
+                    }
+                    pop()
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(pressedColor)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = {}
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ClickableText(
+                        text = annotatedText,
+                        style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface),
+                        onClick = { offset ->
+                            annotatedText.getStringAnnotations(tag = "REGISTER", start = offset, end = offset)
+                                .firstOrNull()?.let {
+                                    navController.navigate(it.item)
+                                }
+                        },
+                    )
+                }
+            }
         }
     }
-}
-
-class PreviewAuthViewModel(repository: UsuarioRepository) : UsuarioViewModel(repository) {
 }
 
 private val loginScreenPreviewViewModel: PreviewAuthViewModel by lazy {

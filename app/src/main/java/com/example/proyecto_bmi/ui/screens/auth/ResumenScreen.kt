@@ -47,7 +47,7 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver a la pestaña anterior",
+                            contentDescription = "Regresar a la pantalla anterior",
                         )
                     }
                 },
@@ -68,7 +68,6 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
             Text(text = "Nombre: ${estado.nombre}")
             Text(text = "Correo: ${estado.correo}")
             Text(text = "Dirección: ${estado.direccion}")
-            // Mostramos la clave con estrellas por seguridad/estética
             Text(text = "Contraseña: ${"*".repeat(n = estado.clave.length)}")
             Text(text = "Términos: ${if (estado.aceptaTerminos) "Aceptados" else "No aceptados"}")
 
@@ -94,22 +93,23 @@ class MockUsuarioDao : UsuarioDao {
 
 class MockUsuarioRepository(usuarioDao: UsuarioDao) : UsuarioRepository(usuarioDao)
 
-class PreviewResumenViewModel(repository: UsuarioRepository) : UsuarioViewModel(repository) {
+class PreviewAuthViewModel(repository: UsuarioRepository) : UsuarioViewModel(repository) {
     override val estado: StateFlow<UsuarioUiState> = MutableStateFlow(
         UsuarioUiState(
             nombre = "Test Preview",
             correo = "test@example.com",
             clave = "12345678",
+            confirmClave = "12345678",
             direccion = "Calle Preview 123",
             aceptaTerminos = true
         )
     )
 }
 
-private val resumenScreenPreviewViewModel: PreviewResumenViewModel by lazy {
+private val resumenScreenPreviewViewModel: PreviewAuthViewModel by lazy {
     val mockDao = MockUsuarioDao()
     val mockRepository = MockUsuarioRepository(mockDao)
-    PreviewResumenViewModel(mockRepository)
+    PreviewAuthViewModel(mockRepository)
 }
 
 @Preview(showBackground = true)

@@ -7,5 +7,8 @@ data class UsuarioUiState(
     val confirmClave: String = "",
     val direccion: String = "",
     val aceptaTerminos: Boolean = false,
-    val errores: UsuarioErrores = UsuarioErrores()
+    val errores: UsuarioErrores = UsuarioErrores(),
+    val loginError: String? = null,
+    val loginEnabled: Boolean = false,
+    val loginLoading: Boolean = false
 )
