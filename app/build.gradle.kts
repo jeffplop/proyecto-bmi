@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

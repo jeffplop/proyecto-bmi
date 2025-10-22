@@ -11,9 +11,9 @@ import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import com.example.proyecto_bmi.ui.screens.auth.LoginScreen
 import com.example.proyecto_bmi.ui.screens.auth.RegistroScreen
 import com.example.proyecto_bmi.ui.screens.auth.ResumenScreen
-import com.example.proyecto_bmi.ui.screens.misc.CatalogoScreen
-import com.example.proyecto_bmi.ui.screens.misc.ContactScreen
-import com.example.proyecto_bmi.ui.screens.misc.HomeScreen
+import com.example.proyecto_bmi.ui.screens.categorias.CategoriaScreen
+import com.example.proyecto_bmi.ui.screens.manuales.ManualScreen
+import com.example.proyecto_bmi.ui.screens.misc.*
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
 
 @Composable
@@ -29,25 +29,37 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = AppScreens.HomeScreen.route
     ) {
-        composable(route = "home") {
+        composable(route = AppScreens.HomeScreen.route) {
             HomeScreen(navController = navController)
         }
-        composable(route = "login") {
+        composable(route = AppScreens.LoginScreen.route) {
             LoginScreen(navController, usuarioViewModel)
         }
-        composable(route = "registro") {
+        composable(route = AppScreens.RegistroScreen.route) {
             RegistroScreen(navController, usuarioViewModel)
         }
-        composable(route = "resumen") {
+        composable(route = AppScreens.ResumenScreen.route) {
             ResumenScreen(navController, usuarioViewModel)
         }
-        composable(route = "contact") {
+        composable(route = AppScreens.ContactScreen.route) {
             ContactScreen(navController = navController)
         }
-        composable(route = "catalogo") {
+        composable(route = AppScreens.CatalogoScreen.route) {
             CatalogoScreen(navController, usuarioViewModel)
+        }
+        composable(route = AppScreens.FavoritosScreen.route) {
+            FavoritosScreen(navController)
+        }
+        composable(route = AppScreens.PerfilScreen.route) {
+            PerfilScreen(navController)
+        }
+        composable(route = AppScreens.ManualScreen.route + "/{manualId}") { backStackEntry ->
+            ManualScreen(navController, backStackEntry.arguments?.getString("manualId"))
+        }
+        composable(route = AppScreens.CategoriaScreen.route + "/{categoriaId}") { backStackEntry ->
+            CategoriaScreen(navController, backStackEntry.arguments?.getString("categoriaId"))
         }
     }
 }
