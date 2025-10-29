@@ -1,5 +1,8 @@
 package com.example.proyecto_bmi.ui.screens.manuales
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +31,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -38,6 +46,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.proyecto_bmi.ui.theme.Proyecto_bmiTheme
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +69,12 @@ fun ManualScreen(navController: NavController, manualId: String?) {
         else -> "https://via.placeholder.com/400x300.png/DC3545/FFFFFF?Text=Error"
     }
 
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(key1 = true) {
+        delay(100)
+        isVisible = true
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,56 +88,62 @@ fun ManualScreen(navController: NavController, manualId: String?) {
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
-                .verticalScroll(rememberScrollState())
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(animationSpec = tween(500)),
+            modifier = Modifier.fillMaxSize()
         ) {
-            Image(
-                painter = rememberAsyncImagePainter(model = manualImageUrl),
-                contentDescription = manualTitle,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
-                contentScale = ContentScale.Crop
-            )
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFFF5F5F5))
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = manualTitle,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                Image(
+                    painter = rememberAsyncImagePainter(model = manualImageUrl),
+                    contentDescription = manualTitle,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp),
+                    contentScale = ContentScale.Crop
                 )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = manualDescription,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(Modifier.height(32.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth()
                 ) {
-                    Button(
-                        onClick = { /* TODO: Lógica para descargar el PDF */ },
-                        modifier = Modifier.weight(1f)
+                    Text(
+                        text = manualTitle,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = manualDescription,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(Modifier.height(32.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = "Descargar")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Descargar")
-                    }
-                    OutlinedButton(
-                        onClick = { /* TODO: Lógica para leer en línea */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.MenuBook, contentDescription = "Leer")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Leer")
+                        Button(
+                            onClick = { /* TODO: Lógica para descargar el PDF */ },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = "Descargar")
+                            Spacer(Modifier.width(8.dp))
+                            Text("Descargar")
+                        }
+                        OutlinedButton(
+                            onClick = { /* TODO: Lógica para leer en línea */ },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.MenuBook, contentDescription = "Leer")
+                            Spacer(Modifier.width(8.dp))
+                            Text("Leer")
+                        }
                     }
                 }
             }

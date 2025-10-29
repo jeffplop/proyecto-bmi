@@ -4,9 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.proyecto_bmi.data.local.dao.CatalogoDao
 import com.example.proyecto_bmi.data.local.dao.UsuarioDao
 import com.example.proyecto_bmi.data.local.entity.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Database(
     entities = [
@@ -34,7 +38,34 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "proyecto_bmi_db"
-                ).build()
+                )
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val dao = getDatabase(context).usuarioDao()
+                                val seed = listOf(
+                                    UsuarioEntity(
+                                        nombre = "Admin",
+                                        email = "admin@bmi.cl",
+                                        clave = "Admin123!",
+                                        direccion = "Duoc UC"
+                                    ),
+                                    UsuarioEntity(
+                                        nombre = "Jeff Ploop",
+                                        email = "jeff@bmi.cl",
+                                        clave = "Jeff123!",
+                                        direccion = "Avenida Siempre Viva 123"
+                                    )
+                                )
+                                if (dao.count() == 0) {
+                                    seed.forEach { dao.insertUser(it) }
+                                }
+                            }
+                        }
+                    })
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
-import com.example.proyecto_bmi.domain.model.UsuarioErrores
 import com.example.proyecto_bmi.domain.model.UsuarioUiState
+import com.example.proyecto_bmi.domain.validation.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -26,37 +26,40 @@ open class UsuarioViewModel(
     val loginExitoso: StateFlow<Boolean> = _loginExitoso
 
     fun onNombreChange(valor: String) {
-        _estado.update { it.copy(nombre = valor, errores = it.errores.copy(nombre = null)) }
+        val error = validateNameLettersOnly(valor)
+        _estado.update { it.copy(nombre = valor, nombreError = error) }
     }
 
     fun onCorreoChange(valor: String) {
+        val error = validateEmail(valor)
         _estado.update {
             it.copy(
                 correo = valor,
-                errores = it.errores.copy(correo = null),
+                correoError = error,
                 loginError = null
             )
         }
-        actualizarLoginStatus()
     }
 
     fun onClaveChange(valor: String) {
+        val error = validateStrongPassword(valor)
         _estado.update {
             it.copy(
                 clave = valor,
-                errores = it.errores.copy(clave = null, confirmClave = null),
+                claveError = error,
                 loginError = null
             )
         }
-        actualizarLoginStatus()
     }
 
     fun onConfirmClaveChange(valor: String) {
-        _estado.update { it.copy(confirmClave = valor, errores = it.errores.copy(confirmClave = null)) }
+        val error = validateConfirm(_estado.value.clave, valor)
+        _estado.update { it.copy(confirmClave = valor, confirmClaveError = error) }
     }
 
     fun onDireccionChange(valor: String) {
-        _estado.update { it.copy(direccion = valor, errores = it.errores.copy(direccion = null)) }
+        val error = validateIsNotBlank(valor, "Dirección")
+        _estado.update { it.copy(direccion = valor, direccionError = error) }
     }
 
     fun onAceptarTerminosChange(valor: Boolean) {
@@ -80,70 +83,48 @@ open class UsuarioViewModel(
         }
     }
 
-    private fun actualizarLoginStatus() {
-        val estadoActual = _estado.value
-        val emailValido = estadoActual.correo.contains("@") && estadoActual.correo.isNotBlank()
-        val claveValida = estadoActual.clave.length >= 6
-
-        _estado.update {
-            it.copy(
-                loginEnabled = emailValido && claveValida
-            )
-        }
-    }
-
     fun intentarLogin() {
         _estado.update { it.copy(loginLoading = true, loginError = null) }
 
-        val estadoActual = _estado.value
+        val emailError = validateEmail(_estado.value.correo)
+        val claveError = validateIsNotBlank(_estado.value.clave, "Contraseña")
 
-        if (!validarLogin()) {
+        if (emailError != null || claveError != null) {
             _estado.update {
                 it.copy(
-                    loginLoading = false,
-                    loginError = "Por favor, revise el formato del correo y la longitud mínima de la contraseña."
+                    correoError = emailError,
+                    claveError = claveError,
+                    loginLoading = false
                 )
             }
             return
         }
 
         viewModelScope.launch {
-            val usuario = usuarioRepository.autenticarUsuario(estadoActual.correo, estadoActual.clave)
-
-            _estado.update { it.copy(loginLoading = false) }
+            val usuario = usuarioRepository.autenticarUsuario(_estado.value.correo, _estado.value.clave)
 
             if (usuario != null) {
                 _loginExitoso.value = true
-                _estado.update { it.copy(nombre = usuario.nombre, correo = usuario.email) }
+                _estado.update {
+                    it.copy(
+                        loginLoading = false,
+                        nombre = usuario.nombre,
+                        correo = usuario.email,
+                        direccion = usuario.direccion
+                    )
+                }
             } else {
-                _estado.update { it.copy(loginError = "Credenciales incorrectas. Verifique su correo y contraseña.") }
+                _estado.update {
+                    it.copy(
+                        loginLoading = false,
+                        loginError = "Credenciales incorrectas."
+                    )
+                }
             }
         }
     }
 
-    private fun validarLogin(): Boolean {
-        val estadoActual = _estado.value
-
-        var erroresEncontrados = UsuarioErrores()
-
-        if (!estadoActual.correo.contains("@") || estadoActual.correo.isBlank()) {
-            erroresEncontrados = erroresEncontrados.copy(correo = "El formato del correo electrónico es inválido")
-        }
-        if (estadoActual.clave.length < 6) {
-            erroresEncontrados = erroresEncontrados.copy(clave = "La contraseña debe contener al menos 6 caracteres")
-        }
-
-        _estado.update { it.copy(errores = erroresEncontrados) }
-
-        val hayErrores = listOfNotNull(
-            erroresEncontrados.correo,
-            erroresEncontrados.clave,
-        ).isNotEmpty()
-
-        return !hayErrores
-    }
-
-    fun intentarRegistro(): Boolean {
+    fun intentarRegistro() {
         if (validarFormulario()) {
             val estadoActual = _estado.value
             val nuevoUsuario = UsuarioEntity(
@@ -159,33 +140,36 @@ open class UsuarioViewModel(
                     _registroExitoso.value = true
                 }
             }
-            return true
         }
-        return false
     }
 
     private fun validarFormulario(): Boolean {
         val estadoActual = _estado.value
 
-        var erroresEncontrados = UsuarioErrores()
-
-        if (estadoActual.nombre.isBlank()) erroresEncontrados = erroresEncontrados.copy(nombre = "Este campo es obligatorio")
-        if (!estadoActual.correo.contains("@")) erroresEncontrados = erroresEncontrados.copy(correo = "El formato del correo electrónico es inválido")
-        if (estadoActual.clave.length < 6) erroresEncontrados = erroresEncontrados.copy(clave = "La contraseña debe contener al menos 6 caracteres")
-        if (estadoActual.direccion.isBlank()) erroresEncontrados = erroresEncontrados.copy(direccion = "Este campo es obligatorio")
-
-        if (estadoActual.clave != estadoActual.confirmClave) erroresEncontrados = erroresEncontrados.copy(confirmClave = "La confirmación de la contraseña no coincide")
+        val nombreError = validateNameLettersOnly(estadoActual.nombre)
+        val correoError = validateEmail(estadoActual.correo)
+        val claveError = validateStrongPassword(estadoActual.clave)
+        val confirmClaveError = validateConfirm(estadoActual.clave, estadoActual.confirmClave)
+        val direccionError = validateIsNotBlank(estadoActual.direccion, "Dirección")
 
         val hayErrores = listOfNotNull(
-            erroresEncontrados.nombre,
-            erroresEncontrados.correo,
-            erroresEncontrados.clave,
-            erroresEncontrados.confirmClave,
-            erroresEncontrados.direccion
+            nombreError,
+            correoError,
+            claveError,
+            confirmClaveError,
+            direccionError
         ).isNotEmpty()
 
-        _estado.update { it.copy(errores = erroresEncontrados) }
-        return !hayErrores
+        _estado.update {
+            it.copy(
+                nombreError = nombreError,
+                correoError = correoError,
+                claveError = claveError,
+                confirmClaveError = confirmClaveError,
+                direccionError = direccionError
+            )
+        }
+        return !hayErrores && estadoActual.aceptaTerminos
     }
 
     class Factory(private val repository: UsuarioRepository) : ViewModelProvider.Factory {

@@ -47,9 +47,9 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
     val registroExitoso by viewModel.registroExitoso.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    val isFormValid = estado.errores.nombre == null && estado.errores.correo == null
-            && estado.errores.clave == null && estado.errores.confirmClave == null
-            && estado.errores.direccion == null && estado.aceptaTerminos
+    val isFormValid = estado.nombreError == null && estado.correoError == null
+            && estado.claveError == null && estado.confirmClaveError == null
+            && estado.direccionError == null && estado.aceptaTerminos
             && estado.nombre.isNotBlank() && estado.correo.isNotBlank()
             && estado.clave.isNotBlank() && estado.confirmClave.isNotBlank()
             && estado.direccion.isNotBlank()
@@ -119,22 +119,22 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
 
                 OutlinedTextField(
                     value = estado.nombre, onValueChange = viewModel::onNombreChange, label = { Text("Nombre de Usuario") },
-                    isError = estado.errores.nombre != null,
-                    supportingText = { estado.errores.nombre?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    isError = estado.nombreError != null,
+                    supportingText = { estado.nombreError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = estado.correo, onValueChange = viewModel::onCorreoChange, label = { Text("Correo electrónico") },
-                    isError = estado.errores.correo != null,
-                    supportingText = { estado.errores.correo?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    isError = estado.correoError != null,
+                    supportingText = { estado.correoError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = estado.direccion, onValueChange = viewModel::onDireccionChange, label = { Text("Dirección") },
-                    isError = estado.errores.direccion != null,
-                    supportingText = { estado.errores.direccion?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    isError = estado.direccionError != null,
+                    supportingText = { estado.direccionError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -143,8 +143,8 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     onValueChange = viewModel::onClaveChange,
                     label = { Text("Contraseña") },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    isError = estado.errores.clave != null,
-                    supportingText = { estado.errores.clave?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    isError = estado.claveError != null,
+                    supportingText = { estado.claveError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
@@ -160,8 +160,8 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     onValueChange = viewModel::onConfirmClaveChange,
                     label = { Text("Confirmar Contraseña") },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    isError = estado.errores.confirmClave != null,
-                    supportingText = { estado.errores.confirmClave?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    isError = estado.confirmClaveError != null,
+                    supportingText = { estado.confirmClaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         val image = if (confirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
@@ -232,19 +232,5 @@ fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 Spacer(Modifier.height(12.dp))
             }
         }
-    }
-}
-
-private val registroScreenPreviewViewModel: PreviewAuthViewModel by lazy {
-    val mockDao = MockUsuarioDao()
-    val mockRepository = MockUsuarioRepository(mockDao)
-    PreviewAuthViewModel(mockRepository)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegistroScreenPreview() {
-    Proyecto_bmiTheme {
-        RegistroScreen(navController = rememberNavController(), viewModel = registroScreenPreviewViewModel)
     }
 }

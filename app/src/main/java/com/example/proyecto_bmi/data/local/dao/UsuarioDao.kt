@@ -17,4 +17,7 @@ interface UsuarioDao {
 
     @Query("UPDATE usuario SET tipoUsuario = :nuevoTipo WHERE id = :userId")
     suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String)
+
+    @Query("SELECT COUNT(*) FROM usuario")
+    suspend fun count(): Int
 }

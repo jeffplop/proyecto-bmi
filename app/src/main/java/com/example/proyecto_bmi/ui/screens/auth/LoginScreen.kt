@@ -67,6 +67,8 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
 
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val isFormValid = estado.correo.isNotBlank() && estado.clave.isNotBlank()
+
     LaunchedEffect(loginExitoso) {
         if (loginExitoso) {
             navController.navigate("catalogo")
@@ -143,9 +145,9 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     value = estado.correo,
                     onValueChange = viewModel::onCorreoChange,
                     label = { Text("Correo Electrónico") },
-                    isError = estado.errores.correo != null,
+                    isError = estado.correoError != null,
                     supportingText = {
-                        estado.errores.correo?.let {
+                        estado.correoError?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
                         }
                     },
@@ -158,9 +160,9 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                     onValueChange = viewModel::onClaveChange,
                     label = { Text("Contraseña") },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    isError = estado.errores.clave != null,
+                    isError = estado.claveError != null,
                     supportingText = {
-                        estado.errores.clave?.let {
+                        estado.claveError?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
                         }
                     },
@@ -178,7 +180,7 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 Button(
                     onClick = viewModel::intentarLogin,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = estado.loginEnabled
+                    enabled = isFormValid && !estado.loginLoading
                 ) {
                     if (estado.loginLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
@@ -232,19 +234,5 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 }
             }
         }
-    }
-}
-
-private val loginScreenPreviewViewModel: PreviewAuthViewModel by lazy {
-    val mockDao = MockUsuarioDao()
-    val mockRepository = MockUsuarioRepository(mockDao)
-    PreviewAuthViewModel(mockRepository)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    Proyecto_bmiTheme {
-        LoginScreen(navController = rememberNavController(), viewModel = loginScreenPreviewViewModel)
     }
 }

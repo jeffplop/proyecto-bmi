@@ -163,6 +163,7 @@ class MockUsuarioDao : UsuarioDao {
     override suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity? = null
     override suspend fun getUserById(userId: Int): UsuarioEntity? = null
     override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
+    override suspend fun count(): Int = 0
 }
 
 class MockUsuarioRepository(usuarioDao: UsuarioDao) : UsuarioRepository(usuarioDao)
