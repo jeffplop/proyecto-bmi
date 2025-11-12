@@ -76,7 +76,7 @@ fun HomeScreen(navController: NavController) {
             Text(
                 "La biblioteca técnica de la industria del pesaje.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant  
             )
 
             Spacer(Modifier.height(32.dp))
