@@ -3,6 +3,7 @@ package com.example.proyecto_bmi.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ContactSupport
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -23,4 +24,5 @@ sealed class AppScreens(
     object PerfilScreen : AppScreens("perfil", "Mi Perfil", Icons.Default.Person)
     object ManualScreen : AppScreens("manual", "Manual", Icons.AutoMirrored.Filled.MenuBook)
     object CategoriaScreen : AppScreens("categoria", "Categoría", Icons.AutoMirrored.Filled.MenuBook)
+    object PostScreen : AppScreens("posts", "Posts (API)", Icons.Default.Api)
 }

@@ -14,6 +14,7 @@ import com.example.proyecto_bmi.ui.screens.auth.ResumenScreen
 import com.example.proyecto_bmi.ui.screens.categorias.CategoriaScreen
 import com.example.proyecto_bmi.ui.screens.manuales.ManualScreen
 import com.example.proyecto_bmi.ui.screens.misc.*
+import com.example.proyecto_bmi.ui.screens.remote.PostScreen
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
 
 @Composable
@@ -60,6 +61,9 @@ fun AppNavigation() {
         }
         composable(route = AppScreens.CategoriaScreen.route + "/{categoriaId}") { backStackEntry ->
             CategoriaScreen(navController, backStackEntry.arguments?.getString("categoriaId"))
+        }
+        composable(route = AppScreens.PostScreen.route) {
+            PostScreen(navController)
         }
     }
 }

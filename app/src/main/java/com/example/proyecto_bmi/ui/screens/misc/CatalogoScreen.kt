@@ -170,7 +170,7 @@ fun EstandarContent(navController: NavController) {
                 Text(text = "Desbloquea el Acceso Ilimitado", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = Color.White, textAlign = TextAlign.Center)
                 Text("Conviértete en Premium para ver todo el contenido.", color = Color.White.copy(alpha = 0.8f), textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { /* TODO: Navegar a planes */ }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF0D47A1))) {
+                Button(onClick = { }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF0D47A1))) {
                     Text("Ver Planes de Suscripción")
                 }
             }
@@ -226,6 +226,7 @@ fun DrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
         AppScreens.CatalogoScreen,
         AppScreens.FavoritosScreen,
         AppScreens.PerfilScreen,
+        AppScreens.PostScreen,
         AppScreens.ContactScreen
     )
 
@@ -305,5 +306,42 @@ fun CatalogoScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 item { Spacer(Modifier.height(16.dp)) }
             }
         }
+    }
+}
+
+class MockCatalogoUsuarioRepository(usuarioDao: UsuarioDao) : UsuarioRepository(usuarioDao)
+class PreviewCatalogoViewModel(repository: UsuarioRepository, isPremium: Boolean) : UsuarioViewModel(repository) {
+    override val estado: StateFlow<UsuarioUiState> = MutableStateFlow(
+        UsuarioUiState(nombre = if (isPremium) "SimuladorPremium" else "UsuarioEstandar")
+    )
+}
+private val catalogoPremiumViewModel: PreviewCatalogoViewModel by lazy {
+    val mockDao = object : UsuarioDao {
+        override suspend fun insertUser(user: UsuarioEntity): Long = 1L
+        override suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity? = null
+        override suspend fun getUserById(userId: Int): UsuarioEntity? = null
+        override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
+        override suspend fun count(): Int = 0
+    }
+    val mockRepository = MockCatalogoUsuarioRepository(mockDao)
+    PreviewCatalogoViewModel(mockRepository, isPremium = true)
+}
+private val catalogoEstandarViewModel: PreviewCatalogoViewModel by lazy {
+    val mockDao = object : UsuarioDao {
+        override suspend fun insertUser(user: UsuarioEntity): Long = 1L
+        override suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity? = null
+        override suspend fun getUserById(userId: Int): UsuarioEntity? = null
+        override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
+        override suspend fun count(): Int = 0
+    }
+    val mockRepository = MockCatalogoUsuarioRepository(mockDao)
+    PreviewCatalogoViewModel(mockRepository, isPremium = false)
+}
+
+@Preview(showBackground = true, name = "Catálogo Estándar")
+@Composable
+fun CatalogoScreenEstandarPreview() {
+    Proyecto_bmiTheme {
+        CatalogoScreen(navController = rememberNavController(), viewModel = catalogoEstandarViewModel)
     }
 }
