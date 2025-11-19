@@ -4,5 +4,9 @@ data class Post(
     val userId: Int,
     val id: Int,
     val title: String,
-    val body: String
+    val body: String,
+    val pdfUrl: String? = null,
+    val version: String? = "1.0",
+    val fecha: String? = "--/--/----",
+    val fabricante: String? = "Genérico"
 )
