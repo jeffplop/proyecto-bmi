@@ -3,7 +3,7 @@ package com.example.proyecto_bmi.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.data.local.repository.PostRepository
+import com.example.proyecto_bmi.data.repository.PostRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
