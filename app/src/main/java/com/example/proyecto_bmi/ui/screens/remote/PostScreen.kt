@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,15 +25,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostScreen(navController: NavController, viewModel: PostViewModel = viewModel()) {
+fun PostScreen(navController: NavController, viewModel: PostViewModel) {
     val posts by viewModel.postList.collectAsState()
+    val userRole by viewModel.userRole.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -40,16 +41,8 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel = viewMode
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            text = "Buscador de Manuales de",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Indicadores de Pesaje",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
-                        )
+                        Text("Manuales Online", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        Text("Rol Actual: $userRole", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4285F4)),
@@ -72,39 +65,31 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel = viewMode
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(posts) { post ->
+                    val isLocked = post.isPremium && userRole != "Premium"
+
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-
-                            Text(
-                                text = post.title,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                ),
-                                color = Color.Black
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = rememberAsyncImagePainter("https://via.placeholder.com/300x200.png?text=Vista+Previa+Manual"),
-                                    contentDescription = "Preview",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = post.title,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                                    color = Color.Black,
+                                    modifier = Modifier.weight(1f)
                                 )
+                                if (post.isPremium) {
+                                    Icon(
+                                        imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.StarBorder,
+                                        contentDescription = "Premium",
+                                        tint = if (isLocked) Color.Red else Color(0xFFFFD700)
+                                    )
+                                }
                             }
-
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = post.body, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Row(
@@ -113,51 +98,25 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel = viewMode
                             ) {
                                 Button(
                                     onClick = {
-                                        if (!post.pdfUrl.isNullOrBlank()) {
+                                        if (!isLocked && !post.pdfUrl.isNullOrBlank()) {
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.pdfUrl))
                                             context.startActivity(intent)
                                         }
                                     },
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4285F4)),
-                                    shape = RoundedCornerShape(50)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isLocked) Color.Gray else Color(0xFF4285F4)
+                                    ),
+                                    shape = RoundedCornerShape(50),
+                                    enabled = !isLocked
                                 ) {
-                                    Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.Download,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Descargar")
-                                }
-
-                                Button(
-                                    onClick = { },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4285F4)),
-                                    shape = RoundedCornerShape(50)
-                                ) {
-                                    Text("Añadir a Favoritos")
-                                    Spacer(Modifier.width(4.dp))
-                                    Icon(Icons.Default.StarBorder, contentDescription = null, modifier = Modifier.size(18.dp))
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Versión:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                    Text(post.version ?: "1.0", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Fecha:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                    Text(post.fecha ?: "N/A", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Fabricante:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                    Text(post.fabricante ?: "N/A", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    Text(if (isLocked) "Suscríbete" else "Descargar")
                                 }
                             }
                         }

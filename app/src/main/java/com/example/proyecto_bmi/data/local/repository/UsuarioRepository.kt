@@ -17,7 +17,6 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
             )
             RetrofitInstance.api.register(userParaNube)
             return usuarioDao.insertUser(usuario)
-
         } catch (e: Exception) {
             return usuarioDao.insertUser(usuario)
         }
@@ -29,12 +28,13 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
             val respuestaBackend = RetrofitInstance.api.login(loginData)
 
             if (respuestaBackend != null) {
+                val rolLocal = if (respuestaBackend.role == "ADMIN" || respuestaBackend.role == "PREMIUM") "Premium" else "Estandar"
                 val usuarioValidado = UsuarioEntity(
                     nombre = respuestaBackend.nombre,
                     email = respuestaBackend.email,
                     clave = clave,
                     direccion = respuestaBackend.direccion,
-                    tipoUsuario = if (respuestaBackend.role == "ADMIN") "Premium" else "Estandar"
+                    tipoUsuario = rolLocal
                 )
                 usuarioDao.insertUser(usuarioValidado)
                 return usuarioValidado
@@ -42,6 +42,10 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
         } catch (e: Exception) {
         }
         return usuarioDao.getUserByCredentials(email, clave)
+    }
+
+    suspend fun obtenerTodosLosUsuariosLocalmente(): List<UsuarioEntity> {
+        return usuarioDao.getAllUsers()
     }
 
     suspend fun obtenerUsuarioPorId(userId: Int): UsuarioEntity? {

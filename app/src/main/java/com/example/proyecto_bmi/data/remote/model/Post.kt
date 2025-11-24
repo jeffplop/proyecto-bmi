@@ -8,5 +8,7 @@ data class Post(
     val pdfUrl: String? = null,
     val version: String? = "1.0",
     val fecha: String? = "--/--/----",
-    val fabricante: String? = "Genérico"
+    val fabricante: String? = "Genérico",
+    val isPremium: Boolean = false,
+    val categoryId: Int? = null
 )

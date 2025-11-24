@@ -20,4 +20,7 @@ interface UsuarioDao {
 
     @Query("SELECT COUNT(*) FROM usuario")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM usuario")
+    suspend fun getAllUsers(): List<UsuarioEntity>
 }

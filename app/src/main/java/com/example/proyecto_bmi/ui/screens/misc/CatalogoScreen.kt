@@ -322,6 +322,7 @@ private val catalogoPremiumViewModel: PreviewCatalogoViewModel by lazy {
         override suspend fun getUserById(userId: Int): UsuarioEntity? = null
         override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
         override suspend fun count(): Int = 0
+        override suspend fun getAllUsers(): List<UsuarioEntity> = emptyList()
     }
     val mockRepository = MockCatalogoUsuarioRepository(mockDao)
     PreviewCatalogoViewModel(mockRepository, isPremium = true)
@@ -333,6 +334,7 @@ private val catalogoEstandarViewModel: PreviewCatalogoViewModel by lazy {
         override suspend fun getUserById(userId: Int): UsuarioEntity? = null
         override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
         override suspend fun count(): Int = 0
+        override suspend fun getAllUsers(): List<UsuarioEntity> = emptyList()
     }
     val mockRepository = MockCatalogoUsuarioRepository(mockDao)
     PreviewCatalogoViewModel(mockRepository, isPremium = false)

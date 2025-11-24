@@ -15,6 +15,7 @@ import com.example.proyecto_bmi.ui.screens.categorias.CategoriaScreen
 import com.example.proyecto_bmi.ui.screens.manuales.ManualScreen
 import com.example.proyecto_bmi.ui.screens.misc.*
 import com.example.proyecto_bmi.ui.screens.remote.PostScreen
+import com.example.proyecto_bmi.viewmodel.PostViewModel
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
 
 @Composable
@@ -63,7 +64,14 @@ fun AppNavigation() {
             CategoriaScreen(navController, backStackEntry.arguments?.getString("categoriaId"))
         }
         composable(route = AppScreens.PostScreen.route) {
-            PostScreen(navController)
+            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return PostViewModel(usuarioRepository) as T
+                    }
+                }
+            )
+            PostScreen(navController, postViewModel)
         }
     }
 }
