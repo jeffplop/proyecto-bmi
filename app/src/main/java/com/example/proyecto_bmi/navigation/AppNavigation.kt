@@ -1,6 +1,7 @@
 package com.example.proyecto_bmi.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -61,7 +62,15 @@ fun AppNavigation() {
             ManualScreen(navController, backStackEntry.arguments?.getString("manualId"))
         }
         composable(route = AppScreens.CategoriaScreen.route + "/{categoriaId}") { backStackEntry ->
-            CategoriaScreen(navController, backStackEntry.arguments?.getString("categoriaId"))
+            val categoriaId = backStackEntry.arguments?.getString("categoriaId")
+            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return PostViewModel(usuarioRepository) as T
+                    }
+                }
+            )
+            CategoriaScreen(navController, postViewModel, categoriaId)
         }
         composable(route = AppScreens.PostScreen.route) {
             val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
@@ -71,6 +80,9 @@ fun AppNavigation() {
                     }
                 }
             )
+            LaunchedEffect(Unit) {
+                postViewModel.fetchPosts()
+            }
             PostScreen(navController, postViewModel)
         }
     }

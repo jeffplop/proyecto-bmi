@@ -7,4 +7,8 @@ class PostRepository {
     suspend fun getPosts(): List<Post> {
         return RetrofitInstance.api.getPosts()
     }
+
+    suspend fun getPostsByCategory(categoryId: Int): List<Post> {
+        return RetrofitInstance.api.getPostsByCategory(categoryId)
+    }
 }

@@ -21,15 +21,24 @@ class PostViewModel(
     val userRole: StateFlow<String> = _userRole
 
     init {
-        fetchPosts()
         fetchCurrentUserRole()
     }
 
-    private fun fetchPosts() {
+    fun fetchPosts() {
         viewModelScope.launch {
             try {
                 _postList.value = repository.getPosts()
             } catch (e: Exception) {
+            }
+        }
+    }
+
+    fun fetchPostsByCategory(categoryId: Int) {
+        viewModelScope.launch {
+            try {
+                _postList.value = repository.getPostsByCategory(categoryId)
+            } catch (e: Exception) {
+                _postList.value = emptyList()
             }
         }
     }
