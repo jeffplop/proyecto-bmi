@@ -2,12 +2,11 @@ package com.example.proyecto_bmi.ui.screens.remote
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.Image
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,18 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import coil.compose.rememberAsyncImagePainter
 import com.example.proyecto_bmi.navigation.AppScreens
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 import kotlinx.coroutines.launch
@@ -39,11 +33,21 @@ import kotlinx.coroutines.launch
 fun PostScreen(navController: NavController, viewModel: PostViewModel) {
     val posts by viewModel.postList.collectAsState()
     val userRole by viewModel.userRole.collectAsState()
+    val favoritesIds by viewModel.favoritesIds.collectAsState()
+    val favoriteMessage by viewModel.favoriteMessage.collectAsState()
+
     var searchQuery by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(favoriteMessage) {
+        favoriteMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
 
     val filteredPosts = posts.filter {
         it.title.contains(searchQuery, ignoreCase = true)
@@ -53,8 +57,8 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                DrawerHeader(nombre = if (userRole == "PREMIUM") "Socio Premium" else "Usuario Estándar")
-                DrawerBody(navController) { scope.launch { drawerState.close() } }
+                PostDrawerHeader(nombre = if (userRole == "PREMIUM") "Socio Premium" else "Usuario Estándar")
+                PostDrawerBody(navController) { scope.launch { drawerState.close() } }
             }
         }
     ) {
@@ -105,6 +109,7 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
                     ) {
                         items(filteredPosts) { post ->
                             val isLocked = post.isPremium && userRole != "PREMIUM"
+                            val isFavorite = favoritesIds.contains(post.id)
 
                             Card(
                                 shape = RoundedCornerShape(16.dp),
@@ -120,11 +125,13 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
                                             color = Color(0xFF1E293B),
                                             modifier = Modifier.weight(1f)
                                         )
+
                                         if (post.isPremium) {
+                                            Spacer(Modifier.width(4.dp))
                                             Icon(
-                                                if (isLocked) Icons.Default.Lock else Icons.Default.StarBorder,
+                                                if (isLocked) Icons.Default.Lock else Icons.Default.Star,
                                                 null,
-                                                tint = if (isLocked) Color(0xFFEF4444) else Color(0xFFF59E0B)
+                                                tint = if (isLocked) Color(0xFFEF4444) else Color(0xFFFFD700)
                                             )
                                         }
                                     }
@@ -133,32 +140,57 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
                                     Text(post.body, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
                                     Spacer(Modifier.height(20.dp))
 
-                                    Button(
-                                        onClick = {
-                                            if (!isLocked && !post.pdfUrl.isNullOrBlank()) {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.pdfUrl))
-                                                context.startActivity(intent)
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(48.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (isLocked) Color(0xFF94A3B8) else Color(0xFF2563EB)
-                                        ),
-                                        shape = RoundedCornerShape(12.dp),
-                                        enabled = !isLocked
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Icon(
-                                            if (isLocked) Icons.Default.Lock else Icons.Default.Download,
-                                            null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            if (isLocked) "Suscríbete para acceder" else "Descargar Manual",
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                        Button(
+                                            onClick = {
+                                                if (!isLocked && !post.pdfUrl.isNullOrBlank()) {
+                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.pdfUrl))
+                                                    context.startActivity(intent)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(48.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (isLocked) Color(0xFF94A3B8) else Color(0xFF2563EB)
+                                            ),
+                                            shape = RoundedCornerShape(12.dp),
+                                            enabled = !isLocked
+                                        ) {
+                                            Icon(
+                                                if (isLocked) Icons.Default.Lock else Icons.Default.Download,
+                                                null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(if (isLocked) "Suscribirse" else "Descargar")
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { viewModel.toggleFavorite(post) },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(48.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = if (isFavorite) Color(0xFFEF4444) else Color(0xFF2563EB)
+                                            ),
+                                            border = androidx.compose.foundation.BorderStroke(
+                                                1.dp,
+                                                if (isFavorite) Color(0xFFEF4444) else Color(0xFF2563EB)
+                                            )
+                                        ) {
+                                            Icon(
+                                                if (isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                                                null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(if (isFavorite) "Quitar" else "Favoritos")
+                                        }
                                     }
                                 }
                             }
@@ -171,7 +203,7 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
 }
 
 @Composable
-private fun DrawerHeader(nombre: String) {
+private fun PostDrawerHeader(nombre: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -191,7 +223,7 @@ private fun DrawerHeader(nombre: String) {
 }
 
 @Composable
-private fun DrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
+private fun PostDrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
     val menuItems = listOf(
         Triple("Catálogo", Icons.AutoMirrored.Filled.MenuBook, AppScreens.CatalogoScreen.route),
         Triple("Manuales Online", Icons.Filled.Wifi, AppScreens.PostScreen.route),
