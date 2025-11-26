@@ -1,5 +1,6 @@
 package com.example.proyecto_bmi.data.local.repository
 
+import android.util.Log
 import com.example.proyecto_bmi.data.local.dao.UsuarioDao
 import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
 import com.example.proyecto_bmi.data.remote.api.RetrofitInstance
@@ -8,7 +9,7 @@ import com.example.proyecto_bmi.data.remote.model.UserRemote
 open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
 
     suspend fun registrarUsuario(usuario: UsuarioEntity): Long {
-        try {
+        return try {
             val userParaNube = UserRemote(
                 nombre = usuario.nombre,
                 email = usuario.email,
@@ -17,9 +18,10 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
             )
             val respuesta = RetrofitInstance.api.register(userParaNube)
             val usuarioConId = usuario.copy(id = respuesta.id ?: 0)
-            return usuarioDao.insertUser(usuarioConId)
+            usuarioDao.insertUser(usuarioConId)
         } catch (e: Exception) {
-            return usuarioDao.insertUser(usuario)
+            Log.e("RepoRegistro", "Error: ${e.message}")
+            usuarioDao.insertUser(usuario)
         }
     }
 
@@ -42,26 +44,32 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
                 return usuarioValidado
             }
         } catch (e: Exception) {
+            Log.e("RepoLogin", "Error login nube: ${e.message}")
         }
         return usuarioDao.getUserByCredentials(email, clave)
     }
 
     suspend fun actualizarPerfil(usuario: UsuarioEntity): Boolean {
+        usuarioDao.updateUser(usuario)
+
         return try {
             val userUpdate = UserRemote(
                 id = usuario.id,
                 nombre = usuario.nombre,
                 email = usuario.email,
-                password = usuario.clave,
+                password = "",
                 telefono = usuario.telefono,
                 role = if (usuario.tipoUsuario == "Premium") "PREMIUM" else "USER"
             )
-            RetrofitInstance.api.updateUser(usuario.id, userUpdate)
-            usuarioDao.updateUser(usuario)
+
+            val respuesta = RetrofitInstance.api.updateUser(usuario.id, userUpdate)
+
+            Log.d("RepoUpdate", "Respuesta del servidor: ${respuesta.string()}")
+
             true
         } catch (e: Exception) {
-            usuarioDao.updateUser(usuario)
-            false
+            Log.e("RepoUpdate", "Fallo red: ${e.message}")
+            true
         }
     }
 

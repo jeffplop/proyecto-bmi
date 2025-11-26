@@ -3,6 +3,7 @@ package com.example.proyecto_bmi.data.remote.api
 import com.example.proyecto_bmi.data.remote.model.CategoryRemote
 import com.example.proyecto_bmi.data.remote.model.Post
 import com.example.proyecto_bmi.data.remote.model.UserRemote
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -26,5 +27,5 @@ interface ApiService {
     suspend fun register(@Body user: UserRemote): UserRemote
 
     @PUT("/users/{id}")
-    suspend fun updateUser(@Path("id") id: Int, @Body user: UserRemote): UserRemote
+    suspend fun updateUser(@Path("id") id: Int, @Body user: UserRemote): ResponseBody
 }

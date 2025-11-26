@@ -26,7 +26,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.proyecto_bmi.data.remote.model.CategoryRemote
 import com.example.proyecto_bmi.data.remote.model.Post
+import com.example.proyecto_bmi.domain.model.UsuarioUiState
 import com.example.proyecto_bmi.navigation.AppScreens
+import com.example.proyecto_bmi.ui.theme.Proyecto_bmiTheme
 import com.example.proyecto_bmi.viewmodel.CatalogoViewModel
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
@@ -35,7 +37,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun CategoryChip(category: CategoryRemote, navController: NavController) {
     Card(
-        modifier = Modifier.width(140.dp).height(100.dp).clickable { navController.navigate(AppScreens.CategoriaScreen.route + "/${category.id}") },
+        modifier = Modifier
+            .width(140.dp)
+            .height(100.dp)
+            .clickable { navController.navigate(AppScreens.CategoriaScreen.route + "/${category.id}") },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -53,18 +58,26 @@ fun CategoryChip(category: CategoryRemote, navController: NavController) {
 }
 
 @Composable
-fun ManualDestacadoCard(post: Post) {
+fun ManualDestacadoCard(post: Post, navController: NavController) {
     Card(
-        modifier = Modifier.width(220.dp).height(140.dp),
+        modifier = Modifier
+            .width(220.dp)
+            .height(140.dp)
+            .clickable {
+                navController.navigate(AppScreens.ManualScreen.route + "/${post.id}")
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2563EB))
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(post.title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Popular", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                Text("Destacado", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
             }
         }
     }
@@ -86,7 +99,9 @@ fun CatalogoScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) { postViewModel.fetchPosts() }
+    LaunchedEffect(Unit) {
+        postViewModel.fetchPosts()
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -127,29 +142,50 @@ fun CatalogoScreen(
 
                 if (searchQuery.isNotEmpty()) {
                     val filtered = posts.filter { it.title.contains(searchQuery, true) }
-                    if (filtered.isEmpty()) Text("No encontrado", color = Color.Gray)
-                    else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(filtered) { post ->
-                            Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
-                                Text(post.title, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { navController.navigate(AppScreens.ManualScreen.route + "/${post.id}") },
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(2.dp)
+                            ) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.AutoMirrored.Filled.MenuBook, null, tint = Color(0xFF2563EB))
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(post.title, fontWeight = FontWeight.Medium)
+                                }
                             }
                         }
                     }
                 } else {
                     Text("Destacados", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
                     Spacer(Modifier.height(12.dp))
-                    if (posts.isEmpty()) CircularProgressIndicator()
-                    else LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(posts.take(3)) { post -> ManualDestacadoCard(post) }
+
+                    if (posts.isEmpty()) {
+                        Text("Cargando destacados...", color = Color.Gray)
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(posts.take(3)) { post ->
+                                ManualDestacadoCard(post, navController)
+                            }
+                        }
                     }
 
                     Spacer(Modifier.height(32.dp))
 
                     Text("Categorías", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
                     Spacer(Modifier.height(12.dp))
-                    if (categories.isEmpty()) CircularProgressIndicator()
-                    else LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(categories) { category -> CategoryChip(category, navController) }
+
+                    if (categories.isEmpty()) {
+                        Text("Cargando categorías...", color = Color.Gray)
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(categories) { category ->
+                                CategoryChip(category, navController)
+                            }
+                        }
                     }
                 }
             }
@@ -183,8 +219,10 @@ fun CatalogoDrawerBody(navController: NavController, onDestinationClicked: () ->
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
         NavigationDrawerItem(
-            label = { Text("Cerrar Sesión", color = Color.Red) }, icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Red) },
-            selected = false, onClick = { navController.navigate(AppScreens.HomeScreen.route) { popUpTo(0) }; onDestinationClicked() }
+            label = { Text("Cerrar Sesión", color = Color.Red) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Red) },
+            selected = false,
+            onClick = { navController.navigate(AppScreens.HomeScreen.route) { popUpTo(0) }; onDestinationClicked() }
         )
     }
 }

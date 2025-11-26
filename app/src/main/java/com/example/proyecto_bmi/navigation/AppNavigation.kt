@@ -85,9 +85,16 @@ fun AppNavigation() {
             )
             PerfilScreen(navController, perfilViewModel)
         }
-
         composable(route = AppScreens.ManualScreen.route + "/{manualId}") { backStackEntry ->
-            ManualScreen(navController, backStackEntry.arguments?.getString("manualId"))
+            val manualId = backStackEntry.arguments?.getString("manualId")
+            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return PostViewModel(usuarioRepository) as T
+                    }
+                }
+            )
+            ManualScreen(navController, manualId, postViewModel)
         }
 
         composable(route = AppScreens.CategoriaScreen.route + "/{categoriaId}") { backStackEntry ->

@@ -1,5 +1,6 @@
 package com.example.proyecto_bmi.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.local.SessionManager
@@ -47,20 +48,24 @@ class PerfilViewModel(
                             userEntity = usuario
                         )
                     }
+                } else {
+                    Log.e("PerfilViewModel", "Usuario no encontrado con ID: $userId")
                 }
             }
         }
     }
 
     fun onNombreChange(nuevo: String) { _uiState.update { it.copy(nombre = nuevo) } }
-
     fun onCorreoChange(nuevo: String) { _uiState.update { it.copy(correo = nuevo) } }
-
     fun onTelefonoChange(nuevo: String) { _uiState.update { it.copy(telefono = nuevo) } }
     fun onFotoChange(nuevaUri: String?) { _uiState.update { it.copy(fotoUri = nuevaUri) } }
 
     fun guardarCambios() {
-        val currentUser = _uiState.value.userEntity ?: return
+        val currentUser = _uiState.value.userEntity
+        if (currentUser == null) {
+            Log.e("PerfilViewModel", "Error: No se puede guardar porque userEntity es null")
+            return
+        }
 
         _uiState.update { it.copy(isLoading = true, updateSuccess = false) }
 
@@ -72,9 +77,16 @@ class PerfilViewModel(
         )
 
         viewModelScope.launch {
-            repository.actualizarPerfil(usuarioActualizado)
-            _uiState.update { it.copy(isLoading = false, updateSuccess = true) }
-            cargarUsuarioActual()
+            val exito = repository.actualizarPerfil(usuarioActualizado)
+
+            if (exito) {
+                Log.d("PerfilViewModel", "Actualización exitosa")
+                _uiState.update { it.copy(isLoading = false, updateSuccess = true) }
+                cargarUsuarioActual()
+            } else {
+                Log.e("PerfilViewModel", "Falló la actualización en el repositorio")
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.proyecto_bmi.ui.screens.misc
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,14 +21,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.proyecto_bmi.domain.model.ManualFavorito
 import com.example.proyecto_bmi.navigation.AppScreens
 import kotlinx.coroutines.launch
 
+data class FavoriteItem(val id: Int, val title: String, val subtitle: String)
+
 val mockFavoritos = listOf(
-    ManualFavorito("Manual del Indicador", "LP7516"),
-    ManualFavorito("Manual de Impresora", "Zebra ZT410"),
-    ManualFavorito("Manual Bluetooth", "LP7516B")
+    FavoriteItem(1, "Manual Indicador LP7516B", "Excell - Bluetooth"),
+    FavoriteItem(2, "Manual WaterProof", "Excell - IP68"),
+    FavoriteItem(3, "Manual ZT410", "Zebra - Industrial")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,6 +101,11 @@ fun FavoritosScreen(navController: NavController) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(filteredFavorites) { fav ->
                             Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navController.navigate(AppScreens.ManualScreen.route + "/${fav.id}")
+                                    },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(2.dp)
