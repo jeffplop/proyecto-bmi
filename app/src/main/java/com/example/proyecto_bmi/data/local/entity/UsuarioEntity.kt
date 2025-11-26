@@ -5,17 +5,11 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "usuario")
 data class UsuarioEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nombre: String,
     val email: String,
     val clave: String,
-    val direccion: String,
-    val tipoUsuario: String = TIPO_ESTANDAR,
-    val fechaIngreso: Long = System.currentTimeMillis()
-) {
-    companion object {
-        const val TIPO_ESTANDAR = "Estandar"
-        const val TIPO_PREMIUM = "Premium"
-    }
-}
+    val telefono: String,
+    val tipoUsuario: String = "Estandar",
+    val fotoUri: String? = null
+)

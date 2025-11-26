@@ -6,6 +6,7 @@ import com.example.proyecto_bmi.data.remote.model.UserRemote
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiService {
@@ -23,4 +24,7 @@ interface ApiService {
 
     @POST("/users/register")
     suspend fun register(@Body user: UserRemote): UserRemote
+
+    @PUT("/users/{id}")
+    suspend fun updateUser(@Path("id") id: Int, @Body user: UserRemote): UserRemote
 }

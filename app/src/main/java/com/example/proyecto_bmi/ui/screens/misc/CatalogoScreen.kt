@@ -3,13 +3,12 @@ package com.example.proyecto_bmi.ui.screens.misc
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ContactSupport
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
@@ -18,48 +17,55 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.proyecto_bmi.data.remote.model.CategoryRemote
-import com.example.proyecto_bmi.domain.model.UsuarioUiState
+import com.example.proyecto_bmi.data.remote.model.Post
 import com.example.proyecto_bmi.navigation.AppScreens
 import com.example.proyecto_bmi.viewmodel.CatalogoViewModel
+import com.example.proyecto_bmi.viewmodel.PostViewModel
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun CategoryCardRemote(category: CategoryRemote, navController: NavController) {
+fun CategoryChip(category: CategoryRemote, navController: NavController) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp)
-            .clickable {
-                navController.navigate(AppScreens.CategoriaScreen.route + "/${category.id}")
-            },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        modifier = Modifier.width(140.dp).height(100.dp).clickable { navController.navigate(AppScreens.CategoriaScreen.route + "/${category.id}") },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
+            modifier = Modifier.fillMaxSize().padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier.size(50.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Category, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Filled.Category, null, tint = Color(0xFF2563EB))
+            Spacer(Modifier.height(8.dp))
+            Text(category.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+        }
+    }
+}
+
+@Composable
+fun ManualDestacadoCard(post: Post) {
+    Card(
+        modifier = Modifier.width(220.dp).height(140.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2563EB))
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(post.title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Popular", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
             }
-            Spacer(Modifier.height(12.dp))
-            Text(text = category.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
-            Text(text = category.descripcion, fontSize = 12.sp, color = Color.Gray, textAlign = TextAlign.Center, maxLines = 2)
         }
     }
 }
@@ -69,32 +75,34 @@ fun CategoryCardRemote(category: CategoryRemote, navController: NavController) {
 fun CatalogoScreen(
     navController: NavController,
     userViewModel: UsuarioViewModel,
-    catalogoViewModel: CatalogoViewModel = viewModel()
+    catalogoViewModel: CatalogoViewModel = viewModel(),
+    postViewModel: PostViewModel
 ) {
     val userState by userViewModel.estado.collectAsState()
     val categories by catalogoViewModel.categories.collectAsState()
+    val posts by postViewModel.postList.collectAsState()
+
+    var searchQuery by remember { mutableStateOf("") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) { postViewModel.fetchPosts() }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                DrawerHeader(estado = userState)
-                DrawerBody(navController) { scope.launch { drawerState.close() } }
+                CatalogoDrawerHeader(userState.nombre)
+                CatalogoDrawerBody(navController) { scope.launch { drawerState.close() } }
             }
         }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Catálogo Dinámico") },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF5F5F5)),
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menú")
-                        }
-                    }
+                    title = { Text("Catálogo", fontWeight = FontWeight.Bold) },
+                    navigationIcon = { IconButton(onClick = { scope.launch { drawerState.open() } }) { Icon(Icons.Default.Menu, null) } },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8FAFC))
                 )
             }
         ) { paddingValues ->
@@ -102,25 +110,46 @@ fun CatalogoScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFFF5F5F5))
+                    .background(Color(0xFFF8FAFC))
                     .padding(16.dp)
             ) {
-                Text("Categorías Disponibles", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Buscar manuales...") },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
+                )
 
-                if (categories.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                Spacer(Modifier.height(24.dp))
+
+                if (searchQuery.isNotEmpty()) {
+                    val filtered = posts.filter { it.title.contains(searchQuery, true) }
+                    if (filtered.isEmpty()) Text("No encontrado", color = Color.Gray)
+                    else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(filtered) { post ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                                Text(post.title, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(categories) { category ->
-                            CategoryCardRemote(category, navController)
-                        }
+                    Text("Destacados", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
+                    Spacer(Modifier.height(12.dp))
+                    if (posts.isEmpty()) CircularProgressIndicator()
+                    else LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(posts.take(3)) { post -> ManualDestacadoCard(post) }
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+
+                    Text("Categorías", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
+                    Spacer(Modifier.height(12.dp))
+                    if (categories.isEmpty()) CircularProgressIndicator()
+                    else LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(categories) { category -> CategoryChip(category, navController) }
                     }
                 }
             }
@@ -129,45 +158,33 @@ fun CatalogoScreen(
 }
 
 @Composable
-fun DrawerHeader(estado: UsuarioUiState) {
-    Box(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(vertical = 24.dp, horizontal = 16.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.MenuBook, null, modifier = Modifier.size(50.dp).clip(CircleShape).background(Color.White).padding(8.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(text = estado.nombre.ifEmpty { "Invitado" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(text = "Buscador B.M.I.", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-            }
-        }
+fun CatalogoDrawerHeader(nombre: String) {
+    Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF2563EB)).padding(vertical = 32.dp, horizontal = 24.dp)) {
+        Text("Hola, ${nombre.ifEmpty { "Usuario" }}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
-fun DrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+fun CatalogoDrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
     val menuItems = listOf(
-        AppScreens.CatalogoScreen, AppScreens.PostScreen, AppScreens.FavoritosScreen, AppScreens.PerfilScreen, AppScreens.ContactScreen
+        Triple("Catálogo", Icons.AutoMirrored.Filled.MenuBook, AppScreens.CatalogoScreen.route),
+        Triple("Manuales Online", Icons.Filled.Wifi, AppScreens.PostScreen.route),
+        Triple("Favoritos", Icons.Filled.Favorite, AppScreens.FavoritosScreen.route),
+        Triple("Mi Perfil", Icons.Filled.Person, AppScreens.PerfilScreen.route),
+        Triple("Contacto", Icons.Filled.SupportAgent, AppScreens.ContactScreen.route)
     )
-    Column(Modifier.padding(8.dp)) {
-        menuItems.forEach { screen ->
+    Column(Modifier.padding(16.dp)) {
+        menuItems.forEach { (title, icon, route) ->
             NavigationDrawerItem(
-                label = { Text(screen.title) },
-                icon = { Icon(screen.icon, null) },
-                selected = currentRoute == screen.route,
-                onClick = { navController.navigate(screen.route); onDestinationClicked() },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                label = { Text(title) }, icon = { Icon(icon, null) }, selected = false,
+                onClick = { navController.navigate(route); onDestinationClicked() },
+                modifier = Modifier.padding(vertical = 4.dp)
             )
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
         NavigationDrawerItem(
-            label = { Text("Cerrar Sesión") },
-            icon = { Icon(Icons.AutoMirrored.Filled.Logout, null) },
-            selected = false,
-            onClick = { navController.navigate(AppScreens.HomeScreen.route); onDestinationClicked() }
+            label = { Text("Cerrar Sesión", color = Color.Red) }, icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Red) },
+            selected = false, onClick = { navController.navigate(AppScreens.HomeScreen.route) { popUpTo(0) }; onDestinationClicked() }
         )
     }
 }

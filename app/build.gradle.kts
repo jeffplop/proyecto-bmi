@@ -42,6 +42,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.foundation)
+    implementation(libs.ui)
     val roomVersion = "2.8.0"
     implementation("androidx.room:room-runtime:${roomVersion}")
     implementation("androidx.room:room-ktx:${roomVersion}")
@@ -76,6 +77,7 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:5.9.0")
     testImplementation("io.mockk:mockk:1.13.10")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 tasks.withType<Test> {
     useJUnitPlatform()

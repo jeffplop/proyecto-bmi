@@ -5,6 +5,6 @@ data class UserRemote(
     val nombre: String,
     val email: String,
     val password: String,
-    val direccion: String,
+    val telefono: String,
     val role: String? = null
 )

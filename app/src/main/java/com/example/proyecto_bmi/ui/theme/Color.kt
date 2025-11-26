@@ -2,11 +2,16 @@ package com.example.proyecto_bmi.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BlueLight80 = Color(0xFF4FC3F7)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-val PrimaryBlue40 = Color(0xFF1976D2)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
-val Purple80 = BlueLight80
-val Purple40 = PrimaryBlue40
+val PrimaryNavy = Color(0xFF0F172A)
+val SecondaryGold = Color(0xFFF59E0B)
+val BackgroundIce = Color(0xFFF1F5F9)
+
+val SurfaceWhite = Color(0xFFFFFFFF)
+val TextPrimary = Color(0xFF1E293B)
+val TextSecondary = Color(0xFF64748B)
+
+val ErrorRed = Color(0xFFEF4444)
+val SuccessGreen = Color(0xFF10B981)
+
+val DarkSurface = Color(0xFF1E293B)
+val DarkText = Color(0xFFE2E8F0)

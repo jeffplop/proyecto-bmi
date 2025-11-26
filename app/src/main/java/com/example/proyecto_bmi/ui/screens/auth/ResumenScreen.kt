@@ -7,9 +7,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -43,16 +42,17 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Resumen de Registro") },
+                title = { Text("Resumen de Registro", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate("home") }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver al inicio",
+                            tint = Color.White
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF2563EB))
             )
         }
     ) { paddingValues ->
@@ -61,66 +61,68 @@ fun ResumenScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 .fillMaxSize()
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            Color(0xFF0D47A1)
-                        )
+                        colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF))
                     )
                 )
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(all = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = "Éxito",
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(80.dp)
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                Text(
-                    text = "¡Registro Exitoso!",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = "Tu cuenta ha sido creada.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Divider(modifier = Modifier.padding(vertical = 24.dp))
-
-                InfoRow(icon = Icons.Filled.Person, label = "Nombre", value = estado.nombre)
-                InfoRow(icon = Icons.Filled.Email, label = "Correo", value = estado.correo)
-                InfoRow(icon = Icons.Filled.Home, label = "Dirección", value = estado.direccion)
-                InfoRow(icon = Icons.Filled.Lock, label = "Contraseña", value = "∗".repeat(n = estado.clave.length))
-
-                Spacer(Modifier.height(32.dp))
-
-                Button(
-                    onClick = { navController.navigate("catalogo") },
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Ir al Catálogo")
-                }
-                Spacer(Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { navController.navigate("contact") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Contactar a Soporte")
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Éxito",
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(80.dp)
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = "¡Registro Exitoso!",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+
+                    Text(
+                        text = "Tu cuenta ha sido creada.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFF64748B)
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+                    InfoRow(icon = Icons.Filled.Person, label = "Nombre", value = estado.nombre)
+                    InfoRow(icon = Icons.Filled.Email, label = "Correo", value = estado.correo)
+                    InfoRow(icon = Icons.Filled.Phone, label = "Teléfono", value = estado.telefono)
+                    InfoRow(icon = Icons.Filled.Lock, label = "Contraseña", value = "∗".repeat(estado.clave.length))
+
+                    Spacer(Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { navController.navigate("catalogo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                    ) {
+                        Text("Ir al Catálogo")
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { navController.navigate("contact") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Contactar a Soporte")
+                    }
                 }
             }
         }
@@ -138,7 +140,7 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = Color(0xFF2563EB),
             modifier = Modifier.size(24.dp)
         )
         Spacer(Modifier.width(16.dp))
@@ -146,13 +148,13 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF64748B)
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color(0xFF1E293B)
             )
         }
     }
@@ -160,6 +162,7 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
 
 class MockUsuarioDao : UsuarioDao {
     override suspend fun insertUser(user: UsuarioEntity): Long = 1L
+    override suspend fun updateUser(user: UsuarioEntity) {}
     override suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity? = null
     override suspend fun getUserById(userId: Int): UsuarioEntity? = null
     override suspend fun updateTipoUsuario(userId: Int, nuevoTipo: String) {}
@@ -176,7 +179,7 @@ class PreviewAuthViewModel(repository: UsuarioRepository) : UsuarioViewModel(rep
             correo = "test@example.com",
             clave = "12345678",
             confirmClave = "12345678",
-            direccion = "Calle Preview 123",
+            telefono = "+56912345678",
             aceptaTerminos = true
         )
     )

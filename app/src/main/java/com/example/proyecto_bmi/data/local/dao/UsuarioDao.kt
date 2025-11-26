@@ -9,6 +9,9 @@ interface UsuarioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: UsuarioEntity): Long
 
+    @Update
+    suspend fun updateUser(user: UsuarioEntity)
+
     @Query("SELECT * FROM usuario WHERE email = :email AND clave = :clave LIMIT 1")
     suspend fun getUserByCredentials(email: String, clave: String): UsuarioEntity?
 

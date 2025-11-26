@@ -13,10 +13,11 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
                 nombre = usuario.nombre,
                 email = usuario.email,
                 password = usuario.clave,
-                direccion = usuario.direccion
+                telefono = usuario.telefono
             )
-            RetrofitInstance.api.register(userParaNube)
-            return usuarioDao.insertUser(usuario)
+            val respuesta = RetrofitInstance.api.register(userParaNube)
+            val usuarioConId = usuario.copy(id = respuesta.id ?: 0)
+            return usuarioDao.insertUser(usuarioConId)
         } catch (e: Exception) {
             return usuarioDao.insertUser(usuario)
         }
@@ -24,16 +25,17 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
 
     suspend fun autenticarUsuario(email: String, clave: String): UsuarioEntity? {
         try {
-            val loginData = UserRemote(nombre = "", email = email, password = clave, direccion = "")
+            val loginData = UserRemote(nombre = "", email = email, password = clave, telefono = "")
             val respuestaBackend = RetrofitInstance.api.login(loginData)
 
             if (respuestaBackend != null) {
                 val rolLocal = if (respuestaBackend.role == "ADMIN" || respuestaBackend.role == "PREMIUM") "Premium" else "Estandar"
                 val usuarioValidado = UsuarioEntity(
+                    id = respuestaBackend.id ?: 0,
                     nombre = respuestaBackend.nombre,
                     email = respuestaBackend.email,
                     clave = clave,
-                    direccion = respuestaBackend.direccion,
+                    telefono = respuestaBackend.telefono,
                     tipoUsuario = rolLocal
                 )
                 usuarioDao.insertUser(usuarioValidado)
@@ -44,12 +46,31 @@ open class UsuarioRepository(private val usuarioDao: UsuarioDao) {
         return usuarioDao.getUserByCredentials(email, clave)
     }
 
-    suspend fun obtenerTodosLosUsuariosLocalmente(): List<UsuarioEntity> {
-        return usuarioDao.getAllUsers()
+    suspend fun actualizarPerfil(usuario: UsuarioEntity): Boolean {
+        return try {
+            val userUpdate = UserRemote(
+                id = usuario.id,
+                nombre = usuario.nombre,
+                email = usuario.email,
+                password = usuario.clave,
+                telefono = usuario.telefono,
+                role = if (usuario.tipoUsuario == "Premium") "PREMIUM" else "USER"
+            )
+            RetrofitInstance.api.updateUser(usuario.id, userUpdate)
+            usuarioDao.updateUser(usuario)
+            true
+        } catch (e: Exception) {
+            usuarioDao.updateUser(usuario)
+            false
+        }
     }
 
     suspend fun obtenerUsuarioPorId(userId: Int): UsuarioEntity? {
         return usuarioDao.getUserById(userId)
+    }
+
+    suspend fun obtenerTodosLosUsuariosLocalmente(): List<UsuarioEntity> {
+        return usuarioDao.getAllUsers()
     }
 
     suspend fun actualizarTipoUsuario(userId: Int, nuevoTipo: String) {

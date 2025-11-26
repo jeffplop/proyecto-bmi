@@ -3,6 +3,7 @@ package com.example.proyecto_bmi.ui.screens.misc
 import android.Manifest
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -12,28 +13,32 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ImageSearch
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.proyecto_bmi.ui.theme.Proyecto_bmiTheme
+import com.example.proyecto_bmi.navigation.AppScreens
+import com.example.proyecto_bmi.viewmodel.PerfilViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,170 +50,293 @@ fun Context.createImageUri(): Uri {
     val storageDir = File(cacheDir, "my_images")
     if (!storageDir.exists()) storageDir.mkdirs()
     val imageFile = File.createTempFile(imageFileName, ".jpg", storageDir)
-    return FileProvider.getUriForFile(
-        this,
-        "${packageName}.provider",
-        imageFile
-    )
+    return FileProvider.getUriForFile(this, "${packageName}.provider", imageFile)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerfilScreen(navController: NavController) {
-    var nombre by remember { mutableStateOf("Jeff Ploop") }
-    var correo by remember { mutableStateOf("jeff.ploop@example.com") }
-    var direccion by remember { mutableStateOf("Av. Siempreviva 742") }
+fun PerfilScreen(navController: NavController, viewModel: PerfilViewModel) {
+    val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    val context = LocalContext.current
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        if (success) {
-            imageUri = tempCameraUri
+    LaunchedEffect(state.updateSuccess) {
+        if (state.updateSuccess) {
+            Toast.makeText(context, "¡Perfil guardado y sincronizado!", Toast.LENGTH_SHORT).show()
+            viewModel.resetSuccess()
         }
     }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
+    LaunchedEffect(state.fotoUri) {
+        if (state.fotoUri != null) {
+            try {
+                imageUri = Uri.parse(state.fotoUri)
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            imageUri = uri
+            viewModel.onFotoChange(uri.toString())
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { success: Boolean ->
+        if (success && tempCameraUri != null) {
+            imageUri = tempCameraUri
+            viewModel.onFotoChange(tempCameraUri.toString())
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
         if (isGranted) {
             val newUri = context.createImageUri()
             tempCameraUri = newUri
             cameraLauncher.launch(newUri)
+        } else {
+            Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Seleccionar foto") },
-            text = { Text("¿Desde dónde quieres obtener la imagen?") },
+            title = { Text("Actualizar Fotografía") },
+            text = { Text("Selecciona el origen de la imagen.") },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         showDialog = false
                         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Cámara", modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Default.CameraAlt, null)
+                    Spacer(Modifier.width(8.dp))
                     Text("Cámara")
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                        imagePickerLauncher.launch("image/*")
-                    }
-                ) {
-                    Icon(Icons.Default.ImageSearch, contentDescription = "Galería", modifier = Modifier.padding(end = 8.dp))
+                OutlinedButton(onClick = {
+                    showDialog = false
+                    imagePickerLauncher.launch("image/*")
+                }) {
+                    Icon(Icons.Default.ImageSearch, null)
+                    Spacer(Modifier.width(8.dp))
                     Text("Galería")
                 }
             }
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mi Perfil") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                PerfilDrawerHeader(nombre = state.nombre)
+                PerfilDrawerBody(navController) { scope.launch { drawerState.close() } }
+            }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(32.dp))
-            Box(
-                contentAlignment = Alignment.BottomEnd,
-                modifier = Modifier.clickable { showDialog = true }
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(
-                        model = imageUri ?: "https://via.placeholder.com/150"
-                    ),
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Editar foto",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(6.dp),
-                    tint = Color.White
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Mi Perfil", fontWeight = FontWeight.Bold, color = Color.White) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menú", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF2563EB))
                 )
             }
-            Spacer(Modifier.height(32.dp))
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Nombre Completo") },
+        ) { paddingValues ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = correo,
-                onValueChange = { correo = it },
-                label = { Text("Correo Electrónico") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = direccion,
-                onValueChange = { direccion = it },
-                label = { Text("Dirección") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-            Spacer(Modifier.height(32.dp))
-            Button(
-                onClick = { /* TODO: Guardar cambios */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFFF8FAFC))
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Guardar Cambios")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF))
+                            )
+                        )
+                ) {
+                    Box(
+                        contentAlignment = Alignment.BottomEnd,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = 60.dp)
+                            .clickable { showDialog = true }
+                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = imageUri ?: "https://via.placeholder.com/150"),
+                            contentDescription = "Foto",
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .padding(4.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF059669))
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(80.dp))
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text("Información Personal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                        Spacer(Modifier.height(20.dp))
+
+                        OutlinedTextField(
+                            value = state.nombre,
+                            onValueChange = { viewModel.onNombreChange(it) },
+                            label = { Text("Nombre Completo") },
+                            leadingIcon = { Icon(Icons.Default.Person, null, tint = Color(0xFF2563EB)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF2563EB),
+                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                            )
+                        )
+                        Spacer(Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = state.correo,
+                            onValueChange = { viewModel.onCorreoChange(it) },
+                            label = { Text("Correo Electrónico") },
+                            leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF2563EB)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF2563EB),
+                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                            )
+                        )
+                        Spacer(Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = state.telefono,
+                            onValueChange = { viewModel.onTelefonoChange(it) },
+                            label = { Text("Número Telefónico (+56...)") },
+                            leadingIcon = { Icon(Icons.Default.Phone, null, tint = Color(0xFF2563EB)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF2563EB),
+                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                            )
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                Button(
+                    onClick = { viewModel.guardarCambios() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .height(56.dp),
+                    enabled = !state.isLoading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(8.dp)
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                    } else {
+                        Icon(Icons.Default.Save, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Guardar Cambios", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PerfilScreenPreview() {
-    Proyecto_bmiTheme {
-        PerfilScreen(navController = rememberNavController())
+private fun PerfilDrawerHeader(nombre: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Brush.linearGradient(colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF))))
+            .padding(vertical = 40.dp, horizontal = 24.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Filled.MenuBook, null, modifier = Modifier.size(40.dp), tint = Color.White)
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(text = "Hola, ${nombre.ifEmpty { "Usuario" }}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(text = "Buscador B.M.I.", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PerfilDrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
+    val menuItems = listOf(
+        Triple("Catálogo", Icons.AutoMirrored.Filled.MenuBook, AppScreens.CatalogoScreen.route),
+        Triple("Manuales Online", Icons.Filled.Wifi, AppScreens.PostScreen.route),
+        Triple("Favoritos", Icons.Filled.Favorite, AppScreens.FavoritosScreen.route),
+        Triple("Mi Perfil", Icons.Filled.Person, AppScreens.PerfilScreen.route),
+        Triple("Contacto", Icons.Filled.SupportAgent, AppScreens.ContactScreen.route)
+    )
+    Column(Modifier.padding(16.dp)) {
+        menuItems.forEach { (title, icon, route) ->
+            NavigationDrawerItem(
+                label = { Text(title) }, icon = { Icon(icon, null) }, selected = false,
+                onClick = { navController.navigate(route); onDestinationClicked() },
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+        NavigationDrawerItem(
+            label = { Text("Cerrar Sesión", color = Color(0xFFEF4444)) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color(0xFFEF4444)) },
+            selected = false,
+            onClick = { navController.navigate(AppScreens.HomeScreen.route) { popUpTo(0) }; onDestinationClicked() }
+        )
     }
 }
