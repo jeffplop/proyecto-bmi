@@ -22,22 +22,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.proyecto_bmi.navigation.AppScreens
+import com.example.proyecto_bmi.viewmodel.PostViewModel
 import kotlinx.coroutines.launch
-
-data class FavoriteItem(val id: Int, val title: String, val subtitle: String)
-
-val mockFavoritos = listOf(
-    FavoriteItem(1, "Manual Indicador LP7516B", "Excell - Bluetooth"),
-    FavoriteItem(2, "Manual WaterProof", "Excell - IP68"),
-    FavoriteItem(3, "Manual ZT410", "Zebra - Industrial")
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FavoritosScreen(navController: NavController) {
+fun FavoritosScreen(navController: NavController, viewModel: PostViewModel) {
+    val posts by viewModel.postList.collectAsState()
+    val favoritesIds by viewModel.favoritesIds.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    val filteredFavorites = mockFavoritos.filter {
-        it.title.contains(searchQuery, true) || it.subtitle.contains(searchQuery, true)
+
+    val favoritePosts = posts.filter { favoritesIds.contains(it.id) }
+
+    val filteredFavorites = favoritePosts.filter {
+        it.title.contains(searchQuery, true) || (it.fabricante ?: "").contains(searchQuery, true)
     }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -82,8 +80,7 @@ fun FavoritosScreen(navController: NavController) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
-                        focusedBorderColor = Color(0xFF2563EB),
-                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                        focusedBorderColor = Color(0xFF2563EB)
                     )
                 )
 
@@ -92,9 +89,12 @@ fun FavoritosScreen(navController: NavController) {
                 if (filteredFavorites.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.Favorite, null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
+                            Icon(Icons.Filled.FavoriteBorder, null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
                             Spacer(Modifier.height(16.dp))
-                            Text("No se encontraron favoritos.", color = Color.Gray, fontSize = 16.sp)
+                            Text(
+                                if (favoritesIds.isEmpty()) "No tienes favoritos guardados." else "No hay coincidencias.",
+                                color = Color.Gray, fontSize = 16.sp
+                            )
                         }
                     }
                 } else {
@@ -111,24 +111,16 @@ fun FavoritosScreen(navController: NavController) {
                                 elevation = CardDefaults.cardElevation(2.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier
-                                        .padding(20.dp)
-                                        .fillMaxWidth(),
+                                    modifier = Modifier.padding(20.dp).fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = Color(0xFFFEF2F2),
-                                        modifier = Modifier.size(48.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Filled.Favorite, null, tint = Color(0xFFEF4444))
-                                        }
+                                    IconButton(onClick = { viewModel.toggleFavorite(fav) }) {
+                                        Icon(Icons.Filled.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(32.dp))
                                     }
                                     Spacer(Modifier.width(16.dp))
                                     Column {
                                         Text(fav.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
-                                        Text(fav.subtitle, color = Color(0xFF64748B), fontSize = 14.sp)
+                                        Text(fav.fabricante ?: "Genérico", color = Color(0xFF64748B), fontSize = 14.sp)
                                     }
                                 }
                             }
@@ -142,13 +134,7 @@ fun FavoritosScreen(navController: NavController) {
 
 @Composable
 private fun FavoritosDrawerHeader() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.linearGradient(colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF))))
-            .padding(vertical = 40.dp, horizontal = 24.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF)))).padding(vertical = 40.dp, horizontal = 24.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Favorite, null, modifier = Modifier.size(40.dp), tint = Color.White)
             Spacer(Modifier.width(16.dp))

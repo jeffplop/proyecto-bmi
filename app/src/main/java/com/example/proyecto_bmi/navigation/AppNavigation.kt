@@ -34,45 +34,29 @@ fun AppNavigation() {
     val factory = UsuarioViewModel.Factory(usuarioRepository)
     val usuarioViewModel: UsuarioViewModel = viewModel(factory = factory)
 
-    NavHost(
-        navController = navController,
-        startDestination = AppScreens.HomeScreen.route
-    ) {
-        composable(route = AppScreens.HomeScreen.route) {
-            HomeScreen(navController = navController)
+    val postViewModelFactory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            return PostViewModel(usuarioRepository, sessionManager) as T
         }
+    }
 
-        composable(route = AppScreens.LoginScreen.route) {
-            LoginScreen(navController, usuarioViewModel, sessionManager)
-        }
-
-        composable(route = AppScreens.RegistroScreen.route) {
-            RegistroScreen(navController, usuarioViewModel)
-        }
-
-        composable(route = AppScreens.ResumenScreen.route) {
-            ResumenScreen(navController, usuarioViewModel)
-        }
-
-        composable(route = AppScreens.ContactScreen.route) {
-            ContactScreen(navController = navController)
-        }
+    NavHost(navController = navController, startDestination = AppScreens.HomeScreen.route) {
+        composable(route = AppScreens.HomeScreen.route) { HomeScreen(navController) }
+        composable(route = AppScreens.LoginScreen.route) { LoginScreen(navController, usuarioViewModel, sessionManager) }
+        composable(route = AppScreens.RegistroScreen.route) { RegistroScreen(navController, usuarioViewModel) }
+        composable(route = AppScreens.ResumenScreen.route) { ResumenScreen(navController, usuarioViewModel) }
+        composable(route = AppScreens.ContactScreen.route) { ContactScreen(navController) }
 
         composable(route = AppScreens.CatalogoScreen.route) {
-            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return PostViewModel(usuarioRepository) as T
-                    }
-                }
-            )
+            val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
             val catalogoViewModel: CatalogoViewModel = viewModel()
-
             CatalogoScreen(navController, usuarioViewModel, catalogoViewModel, postViewModel)
         }
 
         composable(route = AppScreens.FavoritosScreen.route) {
-            FavoritosScreen(navController)
+            val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
+            LaunchedEffect(Unit) { postViewModel.fetchFavorites() }
+            FavoritosScreen(navController, postViewModel)
         }
 
         composable(route = AppScreens.PerfilScreen.route) {
@@ -85,41 +69,22 @@ fun AppNavigation() {
             )
             PerfilScreen(navController, perfilViewModel)
         }
+
         composable(route = AppScreens.ManualScreen.route + "/{manualId}") { backStackEntry ->
             val manualId = backStackEntry.arguments?.getString("manualId")
-            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return PostViewModel(usuarioRepository) as T
-                    }
-                }
-            )
+            val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
             ManualScreen(navController, manualId, postViewModel)
         }
 
         composable(route = AppScreens.CategoriaScreen.route + "/{categoriaId}") { backStackEntry ->
             val categoriaId = backStackEntry.arguments?.getString("categoriaId")
-            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return PostViewModel(usuarioRepository) as T
-                    }
-                }
-            )
+            val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
             CategoriaScreen(navController, postViewModel, categoriaId)
         }
 
         composable(route = AppScreens.PostScreen.route) {
-            val postViewModel = androidx.lifecycle.viewmodel.compose.viewModel<PostViewModel>(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return PostViewModel(usuarioRepository) as T
-                    }
-                }
-            )
-            LaunchedEffect(Unit) {
-                postViewModel.fetchPosts()
-            }
+            val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
+            LaunchedEffect(Unit) { postViewModel.fetchPosts() }
             PostScreen(navController, postViewModel)
         }
     }
