@@ -25,4 +25,6 @@ sealed class AppScreens(
     object ManualScreen : AppScreens("manual", "Manual", Icons.AutoMirrored.Filled.MenuBook)
     object CategoriaScreen : AppScreens("categoria", "Categoría", Icons.AutoMirrored.Filled.MenuBook)
     object PostScreen : AppScreens("posts", "Posts (API)", Icons.Default.Api)
+
+    object AdminScreen : AppScreens("admin", "Administración", Icons.Default.Api)
 }

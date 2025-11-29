@@ -21,6 +21,7 @@ import com.example.proyecto_bmi.viewmodel.CatalogoViewModel
 import com.example.proyecto_bmi.viewmodel.PerfilViewModel
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 import com.example.proyecto_bmi.viewmodel.UsuarioViewModel
+import com.example.proyecto_bmi.ui.screens.admin.AdminScreen
 
 @Composable
 fun AppNavigation() {
@@ -46,6 +47,9 @@ fun AppNavigation() {
         composable(route = AppScreens.RegistroScreen.route) { RegistroScreen(navController, usuarioViewModel) }
         composable(route = AppScreens.ResumenScreen.route) { ResumenScreen(navController, usuarioViewModel) }
         composable(route = AppScreens.ContactScreen.route) { ContactScreen(navController) }
+        composable(route = AppScreens.AdminScreen.route) {
+            AdminScreen(navController)
+        }
 
         composable(route = AppScreens.CatalogoScreen.route) {
             val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)

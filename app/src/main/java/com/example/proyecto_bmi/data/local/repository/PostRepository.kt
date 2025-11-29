@@ -1,6 +1,5 @@
 package com.example.proyecto_bmi.data.repository
 
-import android.util.Log
 import com.example.proyecto_bmi.data.remote.api.RetrofitInstance
 import com.example.proyecto_bmi.data.remote.model.Favorite
 import com.example.proyecto_bmi.data.remote.model.Post
@@ -27,6 +26,32 @@ class PostRepository {
             RetrofitInstance.api.getPostById(id)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    suspend fun createPost(post: Post): Boolean {
+        return try {
+            RetrofitInstance.api.createPost(post)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun updatePost(id: Int, post: Post): Boolean {
+        return try {
+            RetrofitInstance.api.updatePost(id, post)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun deletePost(id: Int): Boolean {
+        return try {
+            RetrofitInstance.api.deletePost(id)
+        } catch (e: Exception) {
+            false
         }
     }
 

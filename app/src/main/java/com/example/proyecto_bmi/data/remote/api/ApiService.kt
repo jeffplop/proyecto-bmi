@@ -5,12 +5,7 @@ import com.example.proyecto_bmi.data.remote.model.Favorite
 import com.example.proyecto_bmi.data.remote.model.Post
 import com.example.proyecto_bmi.data.remote.model.UserRemote
 import okhttp3.ResponseBody
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface ApiService {
     @GET("/posts")
@@ -21,6 +16,15 @@ interface ApiService {
 
     @GET("/posts/category/{id}")
     suspend fun getPostsByCategory(@Path("id") id: Int): List<Post>
+
+    @POST("/posts")
+    suspend fun createPost(@Body post: Post): Post
+
+    @PUT("/posts/{id}")
+    suspend fun updatePost(@Path("id") id: Int, @Body post: Post): Post
+
+    @DELETE("/posts/{id}")
+    suspend fun deletePost(@Path("id") id: Int): Boolean
 
     @GET("/categories")
     suspend fun getCategories(): List<CategoryRemote>
