@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
@@ -15,7 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,7 +33,7 @@ fun AdminManualFormScreen(
     val postToEdit by viewModel.postToEdit.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
-    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
@@ -98,27 +97,26 @@ fun AdminManualFormScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Visibility, null, tint = Color(0xFF0F172A))
                         Spacer(Modifier.width(8.dp))
-                        Text("Vista Previa en App", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                        Text("Vista Previa", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                     }
                     Spacer(Modifier.height(8.dp))
 
                     val previewPost = Post(
-                        id = 0, userId = 0, title = title.ifBlank { "Título del Manual" },
-                        body = body.ifBlank { "Descripción del contenido..." },
+                        userId = 0,
+                        id = 0,
+                        title = title.ifBlank { "Título..." },
+                        body = body.ifBlank { "Descripción..." },
                         fabricante = fabricante.ifBlank { "Marca" },
-                        pdfUrl = pdfUrl, version = version, isPremium = isPremium,
+                        pdfUrl = pdfUrl,
+                        version = version,
+                        isPremium = isPremium,
                         categoryId = categoryId.toIntOrNull() ?: 1
                     )
 
                     ManualItemCard(
                         post = previewPost,
-                        isLocked = false,
-                        isFavorite = false,
-                        isAdmin = false,
-                        onFavoriteClick = {},
-                        onDownloadClick = {},
-                        onEditClick = {},
-                        onDeleteClick = {}
+                        isLocked = false, isFavorite = false, isAdmin = false,
+                        onFavoriteClick = {}, onDownloadClick = {}, onEditClick = {}, onDeleteClick = {}
                     )
                 }
             }
@@ -129,8 +127,6 @@ fun AdminManualFormScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Detalles Técnicos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0F172A))
-
                     OutlinedTextField(
                         value = title, onValueChange = { title = it },
                         label = { Text("Título Principal") }, modifier = Modifier.fillMaxWidth(),
@@ -166,35 +162,22 @@ fun AdminManualFormScreen(
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
                     )
 
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = if(isPremium) Color(0xFFFFF7ED) else Color(0xFFF1F5F9)),
-                        modifier = Modifier.fillMaxWidth(),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if(isPremium) Color(0xFFF59E0B) else Color.Transparent)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(12.dp).fillMaxWidth()
-                        ) {
-                            Checkbox(
-                                checked = isPremium,
-                                onCheckedChange = { isPremium = it },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFF59E0B))
-                            )
-                            Column {
-                                Text("Contenido Premium", fontWeight = FontWeight.Bold)
-                                Text("Solo visible para suscriptores y admins", fontSize = 12.sp, color = Color.Gray)
-                            }
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isPremium, onCheckedChange = { isPremium = it }, colors = CheckboxDefaults.colors(checkedColor = Color(0xFFF59E0B)))
+                        Text("Es Contenido Premium", fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
             Button(
                 onClick = {
-                    keyboardController?.hide()
+                    focusManager.clearFocus()
+
+                    val finalId: Int? = manualId
+
                     val newPost = Post(
-                        id = manualId ?: 0,
                         userId = 0,
+                        id = finalId,
                         title = title,
                         body = body,
                         fabricante = fabricante,
@@ -203,6 +186,7 @@ fun AdminManualFormScreen(
                         isPremium = isPremium,
                         categoryId = categoryId.toIntOrNull() ?: 1
                     )
+
                     viewModel.saveOrUpdatePost(newPost, manualId != null)
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

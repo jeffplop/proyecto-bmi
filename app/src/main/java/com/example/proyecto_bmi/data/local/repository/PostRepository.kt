@@ -1,4 +1,4 @@
-package com.example.proyecto_bmi.data.local.repository
+package com.example.proyecto_bmi.data.repository
 
 import com.example.proyecto_bmi.data.remote.api.RetrofitInstance
 import com.example.proyecto_bmi.data.remote.model.Favorite
@@ -34,6 +34,7 @@ class PostRepository {
             RetrofitInstance.api.createPost(post)
             true
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }
@@ -43,6 +44,7 @@ class PostRepository {
             RetrofitInstance.api.updatePost(id, post)
             true
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }

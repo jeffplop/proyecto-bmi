@@ -2,7 +2,7 @@ package com.example.proyecto_bmi.data.remote.model
 
 data class Post(
     val userId: Int,
-    val id: Int,
+    val id: Int? = null,
     val title: String,
     val body: String,
     val pdfUrl: String? = null,

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.data.local.repository.PostRepository
+import com.example.proyecto_bmi.data.repository.PostRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,15 +96,17 @@ class PostViewModel(
         val userId = sessionManager.getUserId()
         if (userId == -1) return
 
-        val isFav = _favoritesIds.value.contains(post.id)
+        val isFav = _favoritesIds.value.contains(post.id ?: 0)
+        val postId = post.id ?: return
+
         viewModelScope.launch(Dispatchers.IO) {
-            val success = repository.toggleFavorite(userId, post.id, isFav)
+            val success = repository.toggleFavorite(userId, postId, isFav)
             if (success) {
                 if (isFav) {
-                    _favoritesIds.update { it - post.id }
+                    _favoritesIds.update { it - postId }
                     _operationMessage.value = "Eliminado de Favoritos"
                 } else {
-                    _favoritesIds.update { it + post.id }
+                    _favoritesIds.update { it + postId }
                     _operationMessage.value = "Agregado a Favoritos"
                 }
             }
@@ -112,13 +114,13 @@ class PostViewModel(
     }
 
     fun preparePostForEditing(id: Int?) {
+        _saveSuccess.value = false
         if (id == null) {
             _postToEdit.value = null
         } else {
             val post = _postList.value.find { it.id == id }
             _postToEdit.value = post
         }
-        _saveSuccess.value = false
     }
 
     fun getPostById(id: Int) {
@@ -137,7 +139,8 @@ class PostViewModel(
         }
     }
 
-    fun deletePost(id: Int) {
+    fun deletePost(id: Int?) {
+        if (id == null) return
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             val success = repository.deletePost(id)
@@ -155,9 +158,10 @@ class PostViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             val userId = sessionManager.getUserId()
-            val postToSave = if (!isEdit) post.copy(userId = userId) else post
 
-            val success = if (isEdit) {
+            val postToSave = post.copy(userId = if (userId != -1) userId else 1)
+
+            val success = if (isEdit && post.id != null) {
                 repository.updatePost(post.id, postToSave)
             } else {
                 repository.createPost(postToSave)
@@ -165,12 +169,12 @@ class PostViewModel(
 
             withContext(Dispatchers.Main) {
                 if (success) {
-                    _operationMessage.value = if (isEdit) "Actualizado correctamente" else "Creado correctamente"
+                    _operationMessage.value = if (isEdit) "Manual actualizado" else "Manual creado"
                     fetchPosts()
-                    delay(300)
+                    delay(200)
                     _saveSuccess.value = true
                 } else {
-                    _errorMessage.value = "Error al guardar en el servidor"
+                    _errorMessage.value = "Error de conexión. Intente nuevamente."
                 }
                 _isLoading.value = false
             }
