@@ -17,6 +17,12 @@ interface ApiService {
     @GET("/posts/category/{id}")
     suspend fun getPostsByCategory(@Path("id") id: Int): List<Post>
 
+    @GET("/categories")
+    suspend fun getCategories(): List<CategoryRemote>
+
+    @GET("/favorites/user/{userId}")
+    suspend fun getUserFavorites(@Path("userId") userId: Int): List<Favorite>
+
     @POST("/posts")
     suspend fun createPost(@Body post: Post): Post
 
@@ -25,12 +31,6 @@ interface ApiService {
 
     @DELETE("/posts/{id}")
     suspend fun deletePost(@Path("id") id: Int): Boolean
-
-    @GET("/categories")
-    suspend fun getCategories(): List<CategoryRemote>
-
-    @GET("/favorites/user/{userId}")
-    suspend fun getUserFavorites(@Path("userId") userId: Int): List<Favorite>
 
     @POST("/favorites/add")
     suspend fun addFavorite(@Body favorite: Favorite): Favorite

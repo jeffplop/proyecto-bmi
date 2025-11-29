@@ -1,12 +1,17 @@
 package com.example.proyecto_bmi.viewmodel
 
 import com.example.proyecto_bmi.data.local.SessionManager
+import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
+import com.example.proyecto_bmi.data.remote.model.Favorite
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.data.repository.PostRepository
-import io.kotest.matchers.shouldBe
+import com.example.proyecto_bmi.data.local.repository.PostRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,6 +20,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -22,72 +29,113 @@ import org.junit.jupiter.api.Test
 class PostViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
+    private lateinit var mockPostRepo: PostRepository
+    private lateinit var mockUserRepo: UsuarioRepository
+    private lateinit var mockSessionManager: SessionManager
+    private lateinit var viewModel: PostViewModel
 
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(dispatcher)
+        mockkStatic(Dispatchers::class)
+        every { Dispatchers.IO } returns dispatcher
+
+        mockPostRepo = mockk(relaxed = true)
+        mockUserRepo = mockk(relaxed = true)
+        mockSessionManager = mockk(relaxed = true)
     }
 
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
-    fun fetchPosts_debe_actualizar_postList_con_datos() = runTest(dispatcher) {
-
-        val mockPostRepo = mockk<PostRepository>()
-        val mockUserRepo = mockk<UsuarioRepository>(relaxed = true)
-        val mockSession = mockk<SessionManager>(relaxed = true)
-
+    fun fetchPosts_debe_actualizar_postList_correctamente() = runTest(dispatcher) {
         val fakePosts = listOf(
-            Post(1, 101, "Manual A", "Body A", null, "1.0", "2024", "Excell", false, 1),
-            Post(1, 102, "Manual B", "Body B", null, "1.0", "2024", "Zebra", true, 2)
+            Post(1, 101, "Manual Test 1", "Body 1", null, "1.0", "2024", "Excell", false, 1),
+            Post(1, 102, "Manual Test 2", "Body 2", null, "2.0", "2024", "Zebra", true, 2)
         )
-
         coEvery { mockPostRepo.getPosts() } returns fakePosts
+        coEvery { mockSessionManager.getUserId() } returns -1
 
-        val viewModel = PostViewModel(mockUserRepo, mockSession, mockPostRepo)
-
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
         advanceUntilIdle()
 
-        viewModel.postList.value.size shouldBe 2
-        viewModel.postList.value[0].title shouldBe "Manual A"
+        assertEquals(2, viewModel.postList.value.size)
+        assertEquals("Manual Test 1", viewModel.postList.value[0].title)
     }
 
     @Test
-    fun getPostById_debe_actualizar_selectedPost() = runTest(dispatcher) {
-        val mockPostRepo = mockk<PostRepository>()
-        val mockUserRepo = mockk<UsuarioRepository>(relaxed = true)
-        val mockSession = mockk<SessionManager>(relaxed = true)
+    fun fetchCurrentUserRole_debe_identificar_ADMIN() = runTest(dispatcher) {
+        val adminUser = UsuarioEntity(1, "Admin", "admin@bmi.cl", "123", "+569", "Estandar")
+        coEvery { mockSessionManager.getUserId() } returns 1
+        coEvery { mockUserRepo.obtenerUsuarioPorId(1) } returns adminUser
 
-        val targetPost = Post(1, 99, "Target Manual", "Desc", null, "1.0", "2024", "Test", false, 1)
-
-        coEvery { mockPostRepo.getPostById(99) } returns targetPost
-        coEvery { mockPostRepo.getPosts() } returns emptyList() // Para el init
-
-        val viewModel = PostViewModel(mockUserRepo, mockSession, mockPostRepo)
-        viewModel.getPostById(99)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
         advanceUntilIdle()
 
-        viewModel.selectedPost.value shouldBe targetPost
-        viewModel.errorMessage.value shouldBe null
+        assertEquals("ADMIN", viewModel.userRole.value)
     }
 
     @Test
-    fun getPostById_debe_manejar_error() = runTest(dispatcher) {
-        val mockPostRepo = mockk<PostRepository>()
-        val mockUserRepo = mockk<UsuarioRepository>(relaxed = true)
-        val mockSession = mockk<SessionManager>(relaxed = true)
-
-        coEvery { mockPostRepo.getPostById(999) } returns null
+    fun deletePost_debe_llamar_al_repositorio_y_actualizar_mensaje() = runTest(dispatcher) {
+        coEvery { mockPostRepo.deletePost(101) } returns true
         coEvery { mockPostRepo.getPosts() } returns emptyList()
 
-        val viewModel = PostViewModel(mockUserRepo, mockSession, mockPostRepo)
-        viewModel.getPostById(999)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel.deletePost(101)
         advanceUntilIdle()
 
-        viewModel.selectedPost.value shouldBe null
-        viewModel.errorMessage.value shouldBe "Error al cargar manual."
+        coVerify { mockPostRepo.deletePost(101) }
+        assertEquals("Manual eliminado", viewModel.operationMessage.value)
+    }
+
+    @Test
+    fun saveOrUpdatePost_crear_debe_llamar_createPost() = runTest(dispatcher) {
+        val newPost = Post(0, 0, "Nuevo", "Desc", null, "1.0", "2025", "Test", false, 1)
+        coEvery { mockPostRepo.createPost(any()) } returns true
+        coEvery { mockSessionManager.getUserId() } returns 1
+
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel.saveOrUpdatePost(newPost, isEdit = false)
+        advanceUntilIdle()
+
+        coVerify { mockPostRepo.createPost(any()) }
+        assertEquals("Creado correctamente", viewModel.operationMessage.value)
+        assertTrue(viewModel.saveSuccess.value)
+    }
+
+    @Test
+    fun saveOrUpdatePost_editar_debe_llamar_updatePost() = runTest(dispatcher) {
+        val existingPost = Post(userId = 1, id = 55, title = "Editado", body = "Desc", fabricante = "Test")
+        coEvery { mockPostRepo.updatePost(55, any()) } returns true
+
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel.saveOrUpdatePost(existingPost, isEdit = true)
+        advanceUntilIdle()
+
+        coVerify { mockPostRepo.updatePost(55, any()) }
+        assertEquals("Actualizado correctamente", viewModel.operationMessage.value)
+    }
+
+    @Test
+    fun toggleFavorite_remover_debe_actualizar_lista_y_mensaje() = runTest(dispatcher) {
+        val post = Post(1, 101, "Test", "Body", null, "1.0", "2024", "Test", false, 1)
+        val favoritesList = listOf(Favorite(1, 1, 101))
+
+        coEvery { mockSessionManager.getUserId() } returns 1
+        coEvery { mockPostRepo.getFavorites(1) } returns favoritesList
+        coEvery { mockPostRepo.toggleFavorite(1, 101, true) } returns true
+
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        advanceUntilIdle()
+
+        viewModel.toggleFavorite(post)
+        advanceUntilIdle()
+
+        coVerify { mockPostRepo.toggleFavorite(1, 101, true) }
+        assertEquals("Eliminado de Favoritos", viewModel.operationMessage.value)
     }
 }

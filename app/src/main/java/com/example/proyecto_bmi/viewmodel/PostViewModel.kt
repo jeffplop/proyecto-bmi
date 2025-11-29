@@ -5,11 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.data.repository.PostRepository
+import com.example.proyecto_bmi.data.local.repository.PostRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PostViewModel(
     private val usuarioRepository: UsuarioRepository,
@@ -26,6 +29,9 @@ class PostViewModel(
     private val _selectedPost = MutableStateFlow<Post?>(null)
     val selectedPost: StateFlow<Post?> = _selectedPost
 
+    private val _postToEdit = MutableStateFlow<Post?>(null)
+    val postToEdit: StateFlow<Post?> = _postToEdit
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -35,34 +41,53 @@ class PostViewModel(
     private val _userRole = MutableStateFlow("USER")
     val userRole: StateFlow<String> = _userRole
 
-    private val _favoriteMessage = MutableStateFlow<String?>(null)
-    val favoriteMessage: StateFlow<String?> = _favoriteMessage
+    private val _operationMessage = MutableStateFlow<String?>(null)
+    val operationMessage: StateFlow<String?> = _operationMessage
+
+    private val _saveSuccess = MutableStateFlow(false)
+    val saveSuccess: StateFlow<Boolean> = _saveSuccess
 
     init {
-        fetchPosts()
+        refreshAllData()
+    }
+
+    fun refreshAllData() {
         fetchCurrentUserRole()
+        fetchPosts()
         fetchFavorites()
     }
 
-    fun fetchPosts() {
-        viewModelScope.launch {
-            try {
-                val posts = repository.getPosts()
-                _postList.value = posts
-            } catch (e: Exception) {
-                _postList.value = emptyList()
+    private fun fetchCurrentUserRole() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val userId = sessionManager.getUserId()
+            if (userId != -1) {
+                val usuario = usuarioRepository.obtenerUsuarioPorId(userId)
+                val role = when {
+                    usuario?.email?.lowercase()?.contains("admin") == true -> "ADMIN"
+                    usuario?.tipoUsuario.equals("Premium", ignoreCase = true) -> "PREMIUM"
+                    usuario?.tipoUsuario.equals("ADMIN", ignoreCase = true) -> "ADMIN"
+                    else -> "USER"
+                }
+                _userRole.value = role
             }
+        }
+    }
+
+    fun fetchPosts() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            val posts = repository.getPosts()
+            _postList.value = posts
+            _isLoading.value = false
         }
     }
 
     fun fetchFavorites() {
         val userId = sessionManager.getUserId()
         if (userId != -1) {
-            viewModelScope.launch {
-                try {
-                    val favs = repository.getFavorites(userId)
-                    _favoritesIds.value = favs.map { it.postId }.toSet()
-                } catch (e: Exception) { }
+            viewModelScope.launch(Dispatchers.IO) {
+                val favs = repository.getFavorites(userId)
+                _favoritesIds.value = favs.map { it.postId }.toSet()
             }
         }
     }
@@ -72,56 +97,98 @@ class PostViewModel(
         if (userId == -1) return
 
         val isFav = _favoritesIds.value.contains(post.id)
-
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val success = repository.toggleFavorite(userId, post.id, isFav)
             if (success) {
                 if (isFav) {
                     _favoritesIds.update { it - post.id }
-                    _favoriteMessage.value = "Eliminado de Favoritos"
+                    _operationMessage.value = "Eliminado de Favoritos"
                 } else {
                     _favoritesIds.update { it + post.id }
-                    _favoriteMessage.value = "Agregado a Favoritos"
+                    _operationMessage.value = "Agregado a Favoritos"
                 }
             }
         }
     }
 
-    fun clearMessage() { _favoriteMessage.value = null }
-
-    fun fetchPostsByCategory(categoryId: Int) {
-        viewModelScope.launch {
-            try {
-                _postList.value = repository.getPostsByCategory(categoryId)
-            } catch (e: Exception) {
-                _postList.value = emptyList()
-            }
+    fun preparePostForEditing(id: Int?) {
+        if (id == null) {
+            _postToEdit.value = null
+        } else {
+            val post = _postList.value.find { it.id == id }
+            _postToEdit.value = post
         }
+        _saveSuccess.value = false
     }
 
     fun getPostById(id: Int) {
         _isLoading.value = true
-        _errorMessage.value = null
         _selectedPost.value = null
+        _errorMessage.value = null
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val post = repository.getPostById(id)
             if (post != null) {
                 _selectedPost.value = post
             } else {
-                _errorMessage.value = "Error al cargar manual."
+                _errorMessage.value = "Error al cargar el manual."
             }
             _isLoading.value = false
         }
     }
 
-    private fun fetchCurrentUserRole() {
-        viewModelScope.launch {
-            val usuarios = usuarioRepository.obtenerTodosLosUsuariosLocalmente()
-            if (usuarios.isNotEmpty()) {
-                val usuarioActual = usuarios.last()
-                _userRole.value = if (usuarioActual.tipoUsuario == "Premium") "PREMIUM" else "USER"
+    fun deletePost(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            val success = repository.deletePost(id)
+            if (success) {
+                _operationMessage.value = "Manual eliminado"
+                fetchPosts()
+            } else {
+                _errorMessage.value = "Error al eliminar"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun saveOrUpdatePost(post: Post, isEdit: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            val userId = sessionManager.getUserId()
+            val postToSave = if (!isEdit) post.copy(userId = userId) else post
+
+            val success = if (isEdit) {
+                repository.updatePost(post.id, postToSave)
+            } else {
+                repository.createPost(postToSave)
+            }
+
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    _operationMessage.value = if (isEdit) "Actualizado correctamente" else "Creado correctamente"
+                    fetchPosts()
+                    delay(300)
+                    _saveSuccess.value = true
+                } else {
+                    _errorMessage.value = "Error al guardar en el servidor"
+                }
+                _isLoading.value = false
             }
         }
     }
+
+    fun resetSaveStatus() {
+        _saveSuccess.value = false
+    }
+
+    fun fetchPostsByCategory(categoryId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            val posts = repository.getPostsByCategory(categoryId)
+            _postList.value = posts
+            _isLoading.value = false
+        }
+    }
+
+    fun clearMessage() { _operationMessage.value = null }
 }

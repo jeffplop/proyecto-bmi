@@ -1,4 +1,4 @@
-package com.example.proyecto_bmi.data.repository
+package com.example.proyecto_bmi.data.local.repository
 
 import com.example.proyecto_bmi.data.remote.api.RetrofitInstance
 import com.example.proyecto_bmi.data.remote.model.Favorite
@@ -13,19 +13,19 @@ class PostRepository {
         }
     }
 
-    suspend fun getPostsByCategory(categoryId: Int): List<Post> {
-        return try {
-            RetrofitInstance.api.getPostsByCategory(categoryId)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
     suspend fun getPostById(id: Int): Post? {
         return try {
             RetrofitInstance.api.getPostById(id)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    suspend fun getPostsByCategory(categoryId: Int): List<Post> {
+        return try {
+            RetrofitInstance.api.getPostsByCategory(categoryId)
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
