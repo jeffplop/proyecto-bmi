@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.data.repository.PostRepository
+import com.example.proyecto_bmi.data.local.repository.PostRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
