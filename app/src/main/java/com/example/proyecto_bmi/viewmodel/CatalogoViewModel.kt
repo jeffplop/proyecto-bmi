@@ -9,8 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class CatalogoViewModel : ViewModel() {
-    private val repository = CatalogoRepository()
+class CatalogoViewModel(private val repository: CatalogoRepository = CatalogoRepository()) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<CategoryRemote>>(emptyList())
     val categories: StateFlow<List<CategoryRemote>> = _categories.asStateFlow()
@@ -43,10 +42,10 @@ class CatalogoViewModel : ViewModel() {
             }
 
             if (success) {
-                _operationMessage.value = "Categoría guardada correctamente"
+                _operationMessage.value = if (category.id == 0) "Categoría creada" else "Categoría actualizada"
                 fetchCategories()
             } else {
-                _operationMessage.value = "Error al guardar categoría"
+                _operationMessage.value = "Error al guardar"
             }
             _isLoading.value = false
         }

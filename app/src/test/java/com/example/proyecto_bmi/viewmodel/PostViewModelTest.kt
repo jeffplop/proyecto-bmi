@@ -103,7 +103,7 @@ class PostViewModelTest {
         advanceUntilIdle()
 
         coVerify { mockPostRepo.createPost(any()) }
-        assertEquals("Creado correctamente", viewModel.operationMessage.value)
+        assertEquals("Manual creado", viewModel.operationMessage.value)
         assertTrue(viewModel.saveSuccess.value)
     }
 
@@ -117,7 +117,7 @@ class PostViewModelTest {
         advanceUntilIdle()
 
         coVerify { mockPostRepo.updatePost(55, any()) }
-        assertEquals("Actualizado correctamente", viewModel.operationMessage.value)
+        assertEquals("Manual actualizado", viewModel.operationMessage.value)
     }
 
     @Test
