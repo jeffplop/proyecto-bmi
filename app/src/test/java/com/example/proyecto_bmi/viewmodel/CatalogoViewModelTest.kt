@@ -3,6 +3,7 @@ package com.example.proyecto_bmi.viewmodel
 import com.example.proyecto_bmi.data.remote.model.CategoryRemote
 import com.example.proyecto_bmi.data.repository.CatalogoRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
@@ -56,13 +57,32 @@ class CatalogoViewModelTest {
     }
 
     @Test
-    fun fetchCategories_debe_manejar_lista_vacia() = runTest(dispatcher) {
+    fun saveCategory_crear_debe_llamar_createCategory() = runTest(dispatcher) {
         mockkConstructor(CatalogoRepository::class)
         coEvery { anyConstructed<CatalogoRepository>().getCategories() } returns emptyList()
+        coEvery { anyConstructed<CatalogoRepository>().createCategory(any()) } returns true
 
         val viewModel = CatalogoViewModel()
+        val newCategory = CategoryRemote(0, "Nueva", "Desc")
+
+        viewModel.saveCategory(newCategory)
         advanceUntilIdle()
 
-        assertEquals(0, viewModel.categories.value.size)
+        coVerify { anyConstructed<CatalogoRepository>().createCategory(any()) }
+        assertEquals("Categoría guardada correctamente", viewModel.operationMessage.value)
+    }
+
+    @Test
+    fun deleteCategory_debe_llamar_deleteCategory_y_actualizar_mensaje() = runTest(dispatcher) {
+        mockkConstructor(CatalogoRepository::class)
+        coEvery { anyConstructed<CatalogoRepository>().getCategories() } returns emptyList()
+        coEvery { anyConstructed<CatalogoRepository>().deleteCategory(5) } returns true
+
+        val viewModel = CatalogoViewModel()
+        viewModel.deleteCategory(5)
+        advanceUntilIdle()
+
+        coVerify { anyConstructed<CatalogoRepository>().deleteCategory(5) }
+        assertEquals("Categoría eliminada", viewModel.operationMessage.value)
     }
 }

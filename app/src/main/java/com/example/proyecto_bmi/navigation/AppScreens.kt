@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class AppScreens(
@@ -25,6 +26,6 @@ sealed class AppScreens(
     object ManualScreen : AppScreens("manual", "Manual", Icons.AutoMirrored.Filled.MenuBook)
     object CategoriaScreen : AppScreens("categoria", "Categoría", Icons.AutoMirrored.Filled.MenuBook)
     object PostScreen : AppScreens("posts", "Posts (API)", Icons.Default.Api)
-
     object AdminScreen : AppScreens("admin", "Administración", Icons.Default.Api)
+    object AdminCategoryScreen : AppScreens("admin_category", "Gestionar Categorías", Icons.Default.Settings)
 }

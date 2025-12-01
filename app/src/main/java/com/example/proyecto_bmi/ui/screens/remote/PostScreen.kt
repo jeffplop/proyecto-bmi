@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +61,16 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
                     NavigationDrawerItem(label = { Text("Inicio") }, selected = false, onClick = { navController.navigate("home") })
                     NavigationDrawerItem(label = { Text("Catálogo") }, selected = false, onClick = { navController.navigate("catalogo") })
                     NavigationDrawerItem(label = { Text("Perfil") }, selected = false, onClick = { navController.navigate("perfil") })
+
+                    if (userRole == "ADMIN") {
+                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                        NavigationDrawerItem(
+                            label = { Text("Administrar Categorías", fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B)) },
+                            selected = false,
+                            icon = { Icon(Icons.Default.Settings, null, tint = Color(0xFFF59E0B)) },
+                            onClick = { navController.navigate("admin_category") }
+                        )
+                    }
                 }
             }
         }

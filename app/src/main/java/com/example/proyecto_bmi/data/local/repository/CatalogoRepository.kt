@@ -11,4 +11,34 @@ class CatalogoRepository {
             emptyList()
         }
     }
+
+    suspend fun createCategory(category: CategoryRemote): Boolean {
+        return try {
+            RetrofitInstance.api.createCategory(category)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun updateCategory(id: Int, category: CategoryRemote): Boolean {
+        return try {
+            RetrofitInstance.api.updateCategory(id, category)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun deleteCategory(id: Int): Boolean {
+        return try {
+            RetrofitInstance.api.deleteCategory(id)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 }

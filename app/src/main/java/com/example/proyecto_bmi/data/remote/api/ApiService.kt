@@ -22,9 +22,6 @@ interface ApiService {
     @GET("/posts/category/{id}")
     suspend fun getPostsByCategory(@Path("id") id: Int): List<Post>
 
-    @GET("/categories")
-    suspend fun getCategories(): List<CategoryRemote>
-
     @POST("/posts")
     suspend fun createPost(@Body post: Post): Post
 
@@ -33,6 +30,18 @@ interface ApiService {
 
     @DELETE("/posts/{id}")
     suspend fun deletePost(@Path("id") id: Int): Boolean
+
+    @GET("/categories")
+    suspend fun getCategories(): List<CategoryRemote>
+
+    @POST("/categories")
+    suspend fun createCategory(@Body category: CategoryRemote): CategoryRemote
+
+    @PUT("/categories/{id}")
+    suspend fun updateCategory(@Path("id") id: Int, @Body category: CategoryRemote): CategoryRemote
+
+    @DELETE("/categories/{id}")
+    suspend fun deleteCategory(@Path("id") id: Int): ResponseBody
 
     @GET("/favorites/user/{userId}")
     suspend fun getUserFavorites(@Path("userId") userId: Int): List<Favorite>

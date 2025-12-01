@@ -20,6 +20,7 @@ import com.example.proyecto_bmi.ui.screens.manuales.ManualScreen
 import com.example.proyecto_bmi.ui.screens.misc.*
 import com.example.proyecto_bmi.ui.screens.remote.PostScreen
 import com.example.proyecto_bmi.ui.screens.admin.AdminManualFormScreen
+import com.example.proyecto_bmi.ui.screens.admin.AdminCategoryScreen
 import com.example.proyecto_bmi.viewmodel.CatalogoViewModel
 import com.example.proyecto_bmi.viewmodel.PerfilViewModel
 import com.example.proyecto_bmi.viewmodel.PostViewModel
@@ -74,6 +75,11 @@ fun AppNavigation() {
             val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
             LaunchedEffect(Unit) { postViewModel.refreshAllData() }
             PostScreen(navController, postViewModel)
+        }
+
+        composable(route = AppScreens.AdminCategoryScreen.route) {
+            val catalogoViewModel: CatalogoViewModel = viewModel()
+            AdminCategoryScreen(navController, catalogoViewModel)
         }
 
         composable(route = AppScreens.FavoritosScreen.route) {
