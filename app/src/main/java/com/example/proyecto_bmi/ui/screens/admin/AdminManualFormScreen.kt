@@ -1,26 +1,27 @@
 package com.example.proyecto_bmi.ui.screens.admin
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.proyecto_bmi.data.remote.model.Post
-import com.example.proyecto_bmi.ui.screens.remote.ManualItemCard
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,48 +29,71 @@ import com.example.proyecto_bmi.viewmodel.PostViewModel
 fun AdminManualFormScreen(
     navController: NavController,
     viewModel: PostViewModel,
-    manualId: Int?
+    manualId: String? = null
 ) {
-    val postToEdit by viewModel.postToEdit.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val selectedPost by viewModel.selectedPost.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
-    val focusManager = LocalFocusManager.current
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    val context = LocalContext.current
+    val isEditMode = manualId != null
 
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
     var fabricante by remember { mutableStateOf("") }
+    var version by remember { mutableStateOf("") }
+    var fecha by remember { mutableStateOf("") }
     var pdfUrl by remember { mutableStateOf("") }
-    var version by remember { mutableStateOf("1.0") }
     var isPremium by remember { mutableStateOf(false) }
-    var categoryId by remember { mutableStateOf("1") }
 
-    LaunchedEffect(manualId) {
-        viewModel.preparePostForEditing(manualId)
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var categoryExpanded by remember { mutableStateOf(false) }
+    var selectedCategoryName by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchCategories()
+        if (isEditMode) {
+            manualId?.toIntOrNull()?.let { viewModel.getPostById(it) }
+        } else {
+            viewModel.resetSaveStatus()
+        }
     }
 
-    LaunchedEffect(postToEdit) {
-        postToEdit?.let {
-            title = it.title
-            body = it.body
-            fabricante = it.fabricante ?: ""
-            pdfUrl = it.pdfUrl ?: ""
-            version = it.version ?: "1.0"
-            isPremium = it.isPremium
-            categoryId = it.categoryId?.toString() ?: "1"
+    LaunchedEffect(selectedPost) {
+        selectedPost?.let { post ->
+            if (isEditMode) {
+                title = post.title
+                body = post.body
+                fabricante = post.fabricante ?: ""
+                version = post.version ?: ""
+                fecha = post.fecha ?: ""
+                pdfUrl = post.pdfUrl ?: ""
+                isPremium = post.isPremium
+                selectedCategoryId = post.categoryId
+            }
+        }
+    }
+
+    LaunchedEffect(categories, selectedCategoryId) {
+        if (selectedCategoryId != null && categories.isNotEmpty()) {
+            val cat = categories.find { it.id == selectedCategoryId }
+            selectedCategoryName = cat?.nombre ?: "Seleccionar Categoría"
         }
     }
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
-            viewModel.resetSaveStatus()
+            Toast.makeText(context, "Operación exitosa", Toast.LENGTH_SHORT).show()
             navController.popBackStack()
+            viewModel.resetSaveStatus()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (manualId != null) "Editar Manual" else "Nuevo Manual", fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { Text(if (isEditMode) "Editar Manual" else "Nuevo Manual", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -84,125 +108,168 @@ fun AdminManualFormScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .background(Color(0xFFF1F5F9))
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE2E8F0)),
-                shape = RoundedCornerShape(12.dp)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Visibility, null, tint = Color(0xFF0F172A))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Vista Previa", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                    }
-                    Spacer(Modifier.height(8.dp))
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Información General", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
 
-                    val previewPost = Post(
-                        userId = 0,
-                        id = 0,
-                        title = title.ifBlank { "Título..." },
-                        body = body.ifBlank { "Descripción..." },
-                        fabricante = fabricante.ifBlank { "Marca" },
-                        pdfUrl = pdfUrl,
-                        version = version,
-                        isPremium = isPremium,
-                        categoryId = categoryId.toIntOrNull() ?: 1
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Título del Manual") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
-                    ManualItemCard(
-                        post = previewPost,
-                        isLocked = false, isFavorite = false, isAdmin = false,
-                        onFavoriteClick = {}, onDownloadClick = {}, onEditClick = {}, onDeleteClick = {}
+                    OutlinedTextField(
+                        value = body,
+                        onValueChange = { body = it },
+                        label = { Text("Descripción / Cuerpo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5
+                    )
+
+                    ExposedDropdownMenuBox(
+                        expanded = categoryExpanded,
+                        onExpandedChange = { categoryExpanded = !categoryExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCategoryName.ifEmpty { "Seleccionar Categoría" },
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Categoría") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true).fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false }
+                        ) {
+                            if (categories.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Cargando categorías...") },
+                                    onClick = { }
+                                )
+                            } else {
+                                categories.forEach { category ->
+                                    DropdownMenuItem(
+                                        text = { Text(category.nombre) },
+                                        onClick = {
+                                            selectedCategoryId = category.id
+                                            selectedCategoryName = category.nombre
+                                            categoryExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Detalles Técnicos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        OutlinedTextField(
+                            value = fabricante,
+                            onValueChange = { fabricante = it },
+                            label = { Text("Fabricante") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = version,
+                            onValueChange = { version = it },
+                            label = { Text("Versión") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = fecha,
+                        onValueChange = { fecha = it },
+                        label = { Text("Año / Fecha") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    OutlinedTextField(
+                        value = pdfUrl,
+                        onValueChange = { pdfUrl = it },
+                        label = { Text("URL del PDF") },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("https://ejemplo.com/manual.pdf") }
                     )
                 }
             }
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp),
-                shape = RoundedCornerShape(12.dp)
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = title, onValueChange = { title = it },
-                        label = { Text("Título Principal") }, modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
-                    )
-                    OutlinedTextField(
-                        value = fabricante, onValueChange = { fabricante = it },
-                        label = { Text("Fabricante") }, modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
-                    )
-                    OutlinedTextField(
-                        value = body, onValueChange = { body = it },
-                        label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = version, onValueChange = { version = it },
-                            label = { Text("Versión") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
-                        )
-                        OutlinedTextField(
-                            value = categoryId, onValueChange = { if (it.all { char -> char.isDigit() }) categoryId = it },
-                            label = { Text("ID Cat.") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
-                        )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Contenido Premium", fontWeight = FontWeight.Bold)
+                        Text("Solo visible para suscriptores", fontSize = 12.sp, color = Color.Gray)
                     }
-
-                    OutlinedTextField(
-                        value = pdfUrl, onValueChange = { pdfUrl = it },
-                        label = { Text("URL del PDF") }, modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFF59E0B))
+                    Switch(
+                        checked = isPremium,
+                        onCheckedChange = { isPremium = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF59E0B), checkedTrackColor = Color(0xFFFEF3C7))
                     )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = isPremium, onCheckedChange = { isPremium = it }, colors = CheckboxDefaults.colors(checkedColor = Color(0xFFF59E0B)))
-                        Text("Es Contenido Premium", fontWeight = FontWeight.Bold)
-                    }
                 }
             }
 
             Button(
                 onClick = {
-                    focusManager.clearFocus()
-
-                    val finalId: Int? = manualId
-
-                    val newPost = Post(
-                        userId = 0,
-                        id = finalId,
-                        title = title,
-                        body = body,
-                        fabricante = fabricante,
-                        pdfUrl = pdfUrl,
-                        version = version,
-                        isPremium = isPremium,
-                        categoryId = categoryId.toIntOrNull() ?: 1
-                    )
-
-                    viewModel.saveOrUpdatePost(newPost, manualId != null)
+                    if (title.isNotBlank() && body.isNotBlank() && selectedCategoryId != null) {
+                        val post = Post(
+                            id = if (isEditMode) manualId?.toIntOrNull() else null,
+                            userId = 0,
+                            title = title,
+                            body = body,
+                            fabricante = fabricante,
+                            version = version,
+                            fecha = fecha,
+                            pdfUrl = pdfUrl,
+                            isPremium = isPremium,
+                            categoryId = selectedCategoryId
+                        )
+                        viewModel.saveOrUpdatePost(post, isEditMode)
+                    } else {
+                        Toast.makeText(context, "Título, descripción y categoría son obligatorios", Toast.LENGTH_SHORT).show()
+                    }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
-                enabled = !isLoading && title.isNotBlank() && body.isNotBlank()
+                enabled = !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Icon(Icons.Default.Save, null)
+                    Icon(Icons.Default.Check, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Guardar Cambios", fontSize = 16.sp)
+                    Text("Guardar Manual")
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }

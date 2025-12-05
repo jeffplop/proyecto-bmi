@@ -42,6 +42,17 @@ open class UsuarioViewModel(
         _estado.value = UsuarioUiState()
     }
 
+    fun cargarUsuarioSesion(userId: Int) {
+        if (userId != -1) {
+            viewModelScope.launch {
+                val usuario = usuarioRepository.obtenerUsuarioPorId(userId)
+                if (usuario != null) {
+                    _estado.update { it.copy(nombre = usuario.nombre) }
+                }
+            }
+        }
+    }
+
     fun intentarLogin() {
         _estado.update { it.copy(loginLoading = true, loginError = null) }
 

@@ -20,7 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.remote.model.Post
+import com.example.proyecto_bmi.navigation.AppScreens
+import com.example.proyecto_bmi.ui.components.AppDrawer
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 import kotlinx.coroutines.launch
 
@@ -37,6 +40,7 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val sessionManager = SessionManager(context)
 
     LaunchedEffect(operationMessage) {
         operationMessage?.let {
@@ -53,26 +57,19 @@ fun PostScreen(navController: NavController, viewModel: PostViewModel) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                PostDrawerHeader(role = userRole)
-                Column(Modifier.padding(16.dp)) {
-                    Text("Menú", style = MaterialTheme.typography.titleLarge)
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                    NavigationDrawerItem(label = { Text("Inicio") }, selected = false, onClick = { navController.navigate("home") })
-                    NavigationDrawerItem(label = { Text("Catálogo") }, selected = false, onClick = { navController.navigate("catalogo") })
-                    NavigationDrawerItem(label = { Text("Perfil") }, selected = false, onClick = { navController.navigate("perfil") })
-
-                    if (userRole == "ADMIN") {
-                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                        NavigationDrawerItem(
-                            label = { Text("Administrar Categorías", fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B)) },
-                            selected = false,
-                            icon = { Icon(Icons.Default.Settings, null, tint = Color(0xFFF59E0B)) },
-                            onClick = { navController.navigate("admin_category") }
-                        )
+            AppDrawer(
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                userName = "Usuario",
+                userRole = userRole,
+                onLogout = {
+                    sessionManager.clearSession()
+                    navController.navigate(AppScreens.HomeScreen.route) {
+                        popUpTo(0)
                     }
                 }
-            }
+            )
         }
     ) {
         Scaffold(
@@ -226,16 +223,6 @@ fun ManualItemCard(
                     TextButton(onClick = { showDeleteDialog = true }) { Text("Borrar", color = Color(0xFFEF4444)) }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PostDrawerHeader(role: String) {
-    Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF0F172A)).padding(32.dp)) {
-        Column {
-            Text("B.M.I.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text("Rol: $role", color = Color(0xFFF59E0B))
         }
     }
 }

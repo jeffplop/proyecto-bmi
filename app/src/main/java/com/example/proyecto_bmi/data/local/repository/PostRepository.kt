@@ -5,10 +5,12 @@ import com.example.proyecto_bmi.data.remote.model.Favorite
 import com.example.proyecto_bmi.data.remote.model.Post
 
 class PostRepository {
+
     suspend fun getPosts(): List<Post> {
         return try {
             RetrofitInstance.api.getPosts()
         } catch (e: Exception) {
+            e.printStackTrace()
             emptyList()
         }
     }
@@ -17,15 +19,8 @@ class PostRepository {
         return try {
             RetrofitInstance.api.getPostById(id)
         } catch (e: Exception) {
+            e.printStackTrace()
             null
-        }
-    }
-
-    suspend fun getPostsByCategory(categoryId: Int): List<Post> {
-        return try {
-            RetrofitInstance.api.getPostsByCategory(categoryId)
-        } catch (e: Exception) {
-            emptyList()
         }
     }
 
@@ -52,8 +47,19 @@ class PostRepository {
     suspend fun deletePost(id: Int): Boolean {
         return try {
             RetrofitInstance.api.deletePost(id)
+            true
         } catch (e: Exception) {
+            e.printStackTrace()
             false
+        }
+    }
+
+    suspend fun getPostsByCategory(categoryId: Int): List<Post> {
+        return try {
+            RetrofitInstance.api.getPostsByCategory(categoryId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 
@@ -61,19 +67,21 @@ class PostRepository {
         return try {
             RetrofitInstance.api.getUserFavorites(userId)
         } catch (e: Exception) {
+            e.printStackTrace()
             emptyList()
         }
     }
 
-    suspend fun toggleFavorite(userId: Int, postId: Int, isCurrentlyFavorite: Boolean): Boolean {
+    suspend fun toggleFavorite(userId: Int, postId: Int, isFavorite: Boolean): Boolean {
         return try {
-            if (isCurrentlyFavorite) {
+            if (isFavorite) {
                 RetrofitInstance.api.removeFavorite(userId, postId)
             } else {
-                RetrofitInstance.api.addFavorite(Favorite(userId = userId, postId = postId))
+                RetrofitInstance.api.addFavorite(Favorite(id = 0, userId = userId, postId = postId))
             }
             true
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }

@@ -126,9 +126,8 @@ fun AppNavigation() {
             })
         ) { backStackEntry ->
             val manualIdStr = backStackEntry.arguments?.getString("manualId")
-            val manualId = manualIdStr?.toIntOrNull()
             val postViewModel: PostViewModel = viewModel(factory = postViewModelFactory)
-            AdminManualFormScreen(navController, postViewModel, manualId)
+            AdminManualFormScreen(navController, postViewModel, manualIdStr)
         }
     }
 }

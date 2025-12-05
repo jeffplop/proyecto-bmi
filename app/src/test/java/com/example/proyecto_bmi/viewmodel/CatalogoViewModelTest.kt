@@ -1,7 +1,7 @@
 package com.example.proyecto_bmi.viewmodel
 
 import com.example.proyecto_bmi.data.remote.model.CategoryRemote
-import com.example.proyecto_bmi.data.repository.CatalogoRepository
+import com.example.proyecto_bmi.data.local.repository.CatalogoRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -7,9 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,11 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.navigation.AppScreens
+import com.example.proyecto_bmi.ui.components.AppDrawer
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 import kotlinx.coroutines.launch
 
@@ -40,14 +40,24 @@ fun FavoritosScreen(navController: NavController, viewModel: PostViewModel) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val sessionManager = SessionManager(context)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                FavoritosDrawerHeader()
-                FavoritosDrawerBody(navController) { scope.launch { drawerState.close() } }
-            }
+            AppDrawer(
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                userName = "Usuario",
+                onLogout = {
+                    sessionManager.clearSession()
+                    navController.navigate(AppScreens.HomeScreen.route) {
+                        popUpTo(0)
+                    }
+                }
+            )
         }
     ) {
         Scaffold(
@@ -129,46 +139,5 @@ fun FavoritosScreen(navController: NavController, viewModel: PostViewModel) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun FavoritosDrawerHeader() {
-    Box(modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(colors = listOf(Color(0xFF2563EB), Color(0xFF1E40AF)))).padding(vertical = 40.dp, horizontal = 24.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Favorite, null, modifier = Modifier.size(40.dp), tint = Color.White)
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(text = "Mis Favoritos", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(text = "Guardados", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun FavoritosDrawerBody(navController: NavController, onDestinationClicked: () -> Unit) {
-    val menuItems = listOf(
-        Triple("Catálogo", Icons.AutoMirrored.Filled.MenuBook, AppScreens.CatalogoScreen.route),
-        Triple("Manuales Online", Icons.Filled.Wifi, AppScreens.PostScreen.route),
-        Triple("Favoritos", Icons.Filled.Favorite, AppScreens.FavoritosScreen.route),
-        Triple("Mi Perfil", Icons.Filled.Person, AppScreens.PerfilScreen.route),
-        Triple("Contacto", Icons.Filled.SupportAgent, AppScreens.ContactScreen.route)
-    )
-    Column(Modifier.padding(16.dp)) {
-        menuItems.forEach { (title, icon, route) ->
-            NavigationDrawerItem(
-                label = { Text(title) }, icon = { Icon(icon, null) }, selected = false,
-                onClick = { navController.navigate(route); onDestinationClicked() },
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-        }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        NavigationDrawerItem(
-            label = { Text("Cerrar Sesión", color = Color(0xFFEF4444)) },
-            icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color(0xFFEF4444)) },
-            selected = false,
-            onClick = { navController.navigate(AppScreens.HomeScreen.route) { popUpTo(0) }; onDestinationClicked() }
-        )
     }
 }

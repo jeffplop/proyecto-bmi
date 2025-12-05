@@ -6,6 +6,8 @@ import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
 import com.example.proyecto_bmi.data.remote.model.Post
 import com.example.proyecto_bmi.data.local.repository.PostRepository
+import com.example.proyecto_bmi.data.remote.model.CategoryRemote
+import com.example.proyecto_bmi.data.local.repository.CatalogoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,20 +19,21 @@ import kotlinx.coroutines.withContext
 class PostViewModel(
     private val usuarioRepository: UsuarioRepository,
     private val sessionManager: SessionManager,
-    private val repository: PostRepository = PostRepository()
+    private val repository: PostRepository = PostRepository(),
+    private val catalogoRepository: CatalogoRepository = CatalogoRepository()
 ) : ViewModel() {
 
     private val _postList = MutableStateFlow<List<Post>>(emptyList())
     val postList: StateFlow<List<Post>> = _postList
+
+    private val _categories = MutableStateFlow<List<CategoryRemote>>(emptyList())
+    val categories: StateFlow<List<CategoryRemote>> = _categories
 
     private val _favoritesIds = MutableStateFlow<Set<Int>>(emptySet())
     val favoritesIds: StateFlow<Set<Int>> = _favoritesIds
 
     private val _selectedPost = MutableStateFlow<Post?>(null)
     val selectedPost: StateFlow<Post?> = _selectedPost
-
-    private val _postToEdit = MutableStateFlow<Post?>(null)
-    val postToEdit: StateFlow<Post?> = _postToEdit
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -55,6 +58,14 @@ class PostViewModel(
         fetchCurrentUserRole()
         fetchPosts()
         fetchFavorites()
+        fetchCategories()
+    }
+
+    fun fetchCategories() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cats = catalogoRepository.getCategories()
+            _categories.value = cats
+        }
     }
 
     private fun fetchCurrentUserRole() {
@@ -110,16 +121,6 @@ class PostViewModel(
                     _operationMessage.value = "Agregado a Favoritos"
                 }
             }
-        }
-    }
-
-    fun preparePostForEditing(id: Int?) {
-        _saveSuccess.value = false
-        if (id == null) {
-            _postToEdit.value = null
-        } else {
-            val post = _postList.value.find { it.id == id }
-            _postToEdit.value = post
         }
     }
 
@@ -183,6 +184,7 @@ class PostViewModel(
 
     fun resetSaveStatus() {
         _saveSuccess.value = false
+        _selectedPost.value = null
     }
 
     fun fetchPostsByCategory(categoryId: Int) {

@@ -2,7 +2,6 @@ package com.example.proyecto_bmi.ui.screens.categorias
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,19 +18,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.proyecto_bmi.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriaScreen(navController: NavController, viewModel: PostViewModel, categoryId: String?) {
     val posts by viewModel.postList.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val userRole by viewModel.userRole.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -64,14 +62,22 @@ fun CategoriaScreen(navController: NavController, viewModel: PostViewModel, cate
             )
             Spacer(Modifier.height(16.dp))
 
-            if (posts.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Cargando...", color = Color.Gray) }
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF2563EB))
+                }
+            } else if (posts.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay manuales en esta categoría.", color = Color.Gray)
+                }
             } else if (filteredPosts.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No hay coincidencias.", color = Color.Gray) }
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay coincidencias con la búsqueda.", color = Color.Gray)
+                }
             } else {
                 LazyColumn(contentPadding = PaddingValues(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(filteredPosts) { post ->
-                        val isLocked = post.isPremium && userRole != "PREMIUM"
+                        val isLocked = post.isPremium && userRole != "PREMIUM" && userRole != "ADMIN"
                         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {

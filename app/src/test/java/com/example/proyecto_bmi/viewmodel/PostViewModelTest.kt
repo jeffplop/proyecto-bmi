@@ -3,9 +3,11 @@ package com.example.proyecto_bmi.viewmodel
 import com.example.proyecto_bmi.data.local.SessionManager
 import com.example.proyecto_bmi.data.local.entity.UsuarioEntity
 import com.example.proyecto_bmi.data.local.repository.UsuarioRepository
+import com.example.proyecto_bmi.data.remote.model.CategoryRemote
 import com.example.proyecto_bmi.data.remote.model.Favorite
 import com.example.proyecto_bmi.data.remote.model.Post
 import com.example.proyecto_bmi.data.local.repository.PostRepository
+import com.example.proyecto_bmi.data.local.repository.CatalogoRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -32,6 +34,7 @@ class PostViewModelTest {
     private lateinit var mockPostRepo: PostRepository
     private lateinit var mockUserRepo: UsuarioRepository
     private lateinit var mockSessionManager: SessionManager
+    private lateinit var mockCatalogoRepo: CatalogoRepository
     private lateinit var viewModel: PostViewModel
 
     @BeforeEach
@@ -43,6 +46,7 @@ class PostViewModelTest {
         mockPostRepo = mockk(relaxed = true)
         mockUserRepo = mockk(relaxed = true)
         mockSessionManager = mockk(relaxed = true)
+        mockCatalogoRepo = mockk(relaxed = true)
     }
 
     @AfterEach
@@ -60,11 +64,27 @@ class PostViewModelTest {
         coEvery { mockPostRepo.getPosts() } returns fakePosts
         coEvery { mockSessionManager.getUserId() } returns -1
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         advanceUntilIdle()
 
         assertEquals(2, viewModel.postList.value.size)
         assertEquals("Manual Test 1", viewModel.postList.value[0].title)
+    }
+
+    @Test
+    fun fetchCategories_debe_cargar_categorias_para_dropdown() = runTest(dispatcher) {
+        val fakeCategories = listOf(
+            CategoryRemote(1, "Cat1", "Desc1"),
+            CategoryRemote(2, "Cat2", "Desc2")
+        )
+        coEvery { mockCatalogoRepo.getCategories() } returns fakeCategories
+        coEvery { mockSessionManager.getUserId() } returns -1
+
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
+        advanceUntilIdle()
+
+        assertEquals(2, viewModel.categories.value.size)
+        assertEquals("Cat1", viewModel.categories.value[0].nombre)
     }
 
     @Test
@@ -73,7 +93,7 @@ class PostViewModelTest {
         coEvery { mockSessionManager.getUserId() } returns 1
         coEvery { mockUserRepo.obtenerUsuarioPorId(1) } returns adminUser
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         advanceUntilIdle()
 
         assertEquals("ADMIN", viewModel.userRole.value)
@@ -84,7 +104,7 @@ class PostViewModelTest {
         coEvery { mockPostRepo.deletePost(101) } returns true
         coEvery { mockPostRepo.getPosts() } returns emptyList()
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         viewModel.deletePost(101)
         advanceUntilIdle()
 
@@ -98,7 +118,7 @@ class PostViewModelTest {
         coEvery { mockPostRepo.createPost(any()) } returns true
         coEvery { mockSessionManager.getUserId() } returns 1
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         viewModel.saveOrUpdatePost(newPost, isEdit = false)
         advanceUntilIdle()
 
@@ -112,7 +132,7 @@ class PostViewModelTest {
         val existingPost = Post(userId = 1, id = 55, title = "Editado", body = "Desc", fabricante = "Test")
         coEvery { mockPostRepo.updatePost(55, any()) } returns true
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         viewModel.saveOrUpdatePost(existingPost, isEdit = true)
         advanceUntilIdle()
 
@@ -129,7 +149,7 @@ class PostViewModelTest {
         coEvery { mockPostRepo.getFavorites(1) } returns favoritesList
         coEvery { mockPostRepo.toggleFavorite(1, 101, true) } returns true
 
-        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo)
+        viewModel = PostViewModel(mockUserRepo, mockSessionManager, mockPostRepo, mockCatalogoRepo)
         advanceUntilIdle()
 
         viewModel.toggleFavorite(post)
